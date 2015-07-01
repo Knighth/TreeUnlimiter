@@ -46,28 +46,31 @@ namespace TreeUnlimiter
 			{
     			PluginManager.PluginInfo pluginInfo = (
 					from p in Singleton<PluginManager>.instance.GetPluginsInfo()
-                    //uncomment for local testing: where p.name.ToString() == "TreeUnlimiter"
-                    where p.publishedFileID.AsUInt64 == (long)455403039  //comment for local testing. 
-					select p).FirstOrDefault<PluginManager.PluginInfo>();
+#if (DEBUG)  //used for local debug testing
+                    where p.name.ToString() == "TreeUnlimiter 1.1"
+#else   //used for steam distribution - public release.  
+                    where p.publishedFileID.AsUInt64 == (long)455403039
+#endif
+                    select p).FirstOrDefault<PluginManager.PluginInfo>();
 				if (pluginInfo == null)
 				{
 					Mod.IsEnabled = false;
-					DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "[TreeLimit] Can't find self. No idea if this mod is enabled.");
-                    Debug.Log("[TreeLimit] Can't find self. No idea if this mod is enabled");
+                    DebugOutputPanel.AddMessage(PluginManager.MessageType.Message, "[TreeUnlimiter] Can't find self. No idea if this mod is enabled.");
+                    Debug.Log("[TreeUnlimiter] Can't find self. No idea if this mod is enabled");
 				}
 				else
 				{
 					Mod.IsEnabled = pluginInfo.isEnabled;
-                    Debug.Log("[TreeLimit] Mod is enabled, id:" + pluginInfo.publishedFileID.AsUInt64.ToString());
+                    Debug.Log("[TreeUnlimiter] Mod is enabled, id:" + pluginInfo.publishedFileID.AsUInt64.ToString());
                 }
 			}
 			catch (Exception exception1)
 			{
 				Exception exception = exception1;
 				Debug.LogException(exception);
-				object[] type = new object[] { "[TreeLimit] ", exception.GetType(), ": ", exception.Message };
+                object[] type = new object[] { "[TreeUnlimiter] ", exception.GetType(), ": ", exception.Message };
 				DebugOutputPanel.AddMessage(PluginManager.MessageType.Warning, string.Concat(type));
-                Debug.Log("[TreeLimit] " + exception.Message.ToString());
+                Debug.Log("[TreeUnlimiter] " + exception.Message.ToString());
             }
 		}
 

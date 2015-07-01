@@ -13,7 +13,8 @@ namespace TreeUnlimiter
             uint Useless = 0;
 			unsafe
 			{
-				Vector3 vector3 = new Vector3();
+
+                Vector3 vector3 = new Vector3();
 				float single;
 				float single1;
 				uint num;
@@ -52,7 +53,7 @@ namespace TreeUnlimiter
 						float single7 = single3 + (float)(((double)single4 - (double)single3) * ((double)mBrushSize2 - (double)num9));
 						float single8 = single5 + (float)(((double)single6 - (double)single5) * ((double)mBrushSize2 - (double)num9));
 						float single9 = single7 + (float)(((double)single8 - (double)single7) * ((double)mBrushSize1 - (double)num7));
-						int num11 = (int)((double)mStrength * ((double)single9 * 1.20000004768372 - 0.200000002980232) * 10000);
+						int num11 = (int)((double)mStrength * ((double)single9 * 1.2f - 0.2f) * 10000f);
 						if (flag && tt.m_prefab != null)
 						{
 							if (value.Int32(10000) < num11)
@@ -64,12 +65,14 @@ namespace TreeUnlimiter
 								vector3.z = vector3.z + (float)(((double)value.Int32(10000) + 0.5) * ((double)single2 / 10000));
 								vector3.y = 0f;
 								vector3.y = Singleton<TerrainManager>.instance.SampleDetailHeight(vector3, out single, out single1);
-								if ((double)Mathf.Max(Mathf.Abs(single), Mathf.Abs(single1)) < (double)value.Int32(10000) * 4.99999987368938E-05)
+                                if ((double)Mathf.Max(Mathf.Abs(single), Mathf.Abs(single1)) < (double)value.Int32(10000) * 5E-05f)
 								{
 									float mSize = treeInfo.m_generatedInfo.m_size.y;
 									float mMinScale = treeInfo.m_minScale;
 									Randomizer randomizer = new Randomizer(Singleton<TreeManager>.instance.m_trees.NextFreeItem(ref value));
-									float single10 = mSize * (mMinScale + (float)((double)randomizer.Int32(10000) * ((double)treeInfo.m_maxScale - (double)treeInfo.m_minScale) * 9.99999974737875E-05));
+									//float single10 = mSize * (mMinScale + (float)((double)randomizer.Int32(10000) * ((double)treeInfo.m_maxScale - (double)treeInfo.m_minScale) * 9.99999974737875E-05));
+                                    mMinScale = mMinScale + (float)randomizer.Int32(10000) * ((treeInfo.m_maxScale - treeInfo.m_minScale) * 0.0001f);
+                                    mSize = mSize * mMinScale;
 									float single11 = 4.5f;
 									Vector2 vector2 = VectorUtils.XZ(vector3);
 									Quad2 quad2 = new Quad2()
@@ -86,10 +89,12 @@ namespace TreeUnlimiter
 										c = vector2 + new Vector2(8f, 8f),
 										d = vector2 + new Vector2(8f, -8f)
 									};
-									float single12 = value1.y;
-									float single13 = value1.y + single10;
-									if (!Singleton<PropManager>.instance.OverlapQuad(quad2, single12, single13, 0, 0) && !Singleton<TreeManager>.instance.OverlapQuad(quad21, single12, single13, 0, 0) && !Singleton<NetManager>.instance.OverlapQuad(quad2, single12, single13, treeInfo1.m_class.m_layer, 0, 0, 0) && !Singleton<BuildingManager>.instance.OverlapQuad(quad2, single12, single13, treeInfo1.m_class.m_layer, 0, 0, 0) && !Singleton<TerrainManager>.instance.HasWater(vector2) && !Singleton<GameAreaManager>.instance.QuadOutOfArea(quad2) && !Singleton<TreeManager>.instance.CreateTree(out num, ref value, treeInfo1, vector3, false))
+									float single12 = value1.y - 1000f;
+									float single13 = value1.y + mSize;
+
+                                    if (!Singleton<PropManager>.instance.OverlapQuad(quad2, single12, single13, 0, 0) && !Singleton<TreeManager>.instance.OverlapQuad(quad21, single12, single13, 0, 0) && !Singleton<NetManager>.instance.OverlapQuad(quad2, single12, single13, treeInfo1.m_class.m_layer, 0, 0, 0) && !Singleton<BuildingManager>.instance.OverlapQuad(quad2, single12, single13, treeInfo1.m_class.m_layer, 0, 0, 0) && !Singleton<TerrainManager>.instance.HasWater(vector2) && !Singleton<GameAreaManager>.instance.QuadOutOfArea(quad2) && !Singleton<TreeManager>.instance.CreateTree(out num, ref value, treeInfo1, vector3, false))
 									{
+
 									}
 								}
 							}

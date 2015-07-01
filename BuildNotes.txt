@@ -1,4 +1,4 @@
-This was build with Visual Studio 2010
+This was built with Visual Studio 2010
 
 
 Place current copies of the Cities:Skylines dlls in the
