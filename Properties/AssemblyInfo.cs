@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Permissions;
 
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("v111c_build_03")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyDescription("Cities Skyline Mod - Tree Unlimiter")]

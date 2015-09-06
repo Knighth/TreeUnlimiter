@@ -40,12 +40,12 @@ namespace CitiesSkylinesDetour
         /// </summary>
         /// <param name="from"></param>
         /// <param name="to"></param>
-        public static void RedirectCalls(MethodInfo from, MethodInfo to)
+        public static void RedirectCalls(MethodInfo from, MethodInfo to,bool bLog)
         {
             // GetFunctionPointer enforces compilation of the method.
             var fptr1 = from.MethodHandle.GetFunctionPointer();
             var fptr2 = to.MethodHandle.GetFunctionPointer();
-            Debug.Log("[TreeLimit] Detour: Patching from " + fptr1 + " to " + fptr2);
+            if (bLog == true){ Debug.Log("[TreeUnlimiter] Detour: Patching from " + fptr1 + " to " + fptr2);}
             PatchJumpTo(fptr1, fptr2);
             // We could also use:
             //RedirectCall(from, to);
@@ -110,7 +110,7 @@ namespace CitiesSkylinesDetour
                 }
                 if (jitInfoFrom == null || jitInfoTo == null)
                 {
-                    Debug.Log("[TreeLimit] Detour: Could not find methods");
+                    Debug.Log("[TreeUnlimiter] Detour: Could not find methods");
                     return;
                 }
                 // copy over code_start, used_regs, code_size and ignore the rest for now.

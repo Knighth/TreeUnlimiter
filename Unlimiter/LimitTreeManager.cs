@@ -162,8 +162,9 @@ namespace TreeUnlimiter
 			ItemClass.Availability mMode = Singleton<ToolManager>.instance.m_properties.m_mode;
 			if ((mMode & ItemClass.Availability.MapEditor) != ItemClass.Availability.None)
 			{
-				if (tm.m_treeCount >= 250000)
-				{
+				//if (tm.m_treeCount >= 250000)
+                if (tm.m_treeCount >= LimitTreeManager.Helper.TreeLimit - 5)
+                {
 					return false;
 				}
 			}
@@ -633,7 +634,8 @@ namespace TreeUnlimiter
 		private static void UpdateData(TreeManager tm, SimulationManager.UpdateMode mode)
 		{
 			Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginLoading("TreeManager.UpdateData");
-			LimitTreeManager.Helper.EnsureInit();
+            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter::LimitTreeManager::UpdateData()] calling Ensure Init"); }
+            LimitTreeManager.Helper.EnsureInit(3);
 			for (int i = 1; i < LimitTreeManager.Helper.TreeLimit; i++)
 			{
 				if (tm.m_trees.m_buffer[i].m_flags != 0 && tm.m_trees.m_buffer[i].Info == null)
@@ -715,7 +717,10 @@ namespace TreeUnlimiter
 			{
 				unsafe
 				{
-					LimitTreeManager.Helper.EnsureInit();
+                    if(TreeUnlimiter.Mod.DEBUG_LOG_ON == true ){Debug.Log("[TreeUnlimiter::CustomSerializer::Deserialize()] calling Ensure Init");}
+                    if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter::CustomSerializer::Deserialize()] treelimit = " + LimitTreeManager.Helper.TreeLimit.ToString()); }
+                    
+                    LimitTreeManager.Helper.EnsureInit(2);
 					if (!LimitTreeManager.Helper.UseModifiedTreeCap)
 					{
 						return false;
@@ -723,14 +728,14 @@ namespace TreeUnlimiter
 					byte[] numArray = null;
 					if (!Singleton<SimulationManager>.instance.m_serializableDataStorage.TryGetValue("mabako/unlimiter", out numArray))
 					{
-						Debug.Log("TreeLimit: no extra data saved with this savegame.");
+						Debug.Log("[TreeUnlimiter::CustomSerializer.Deserialize()]: No extra data saved with this savegame.");
 						return false;
 					}
 					object[] length = new object[] { (int)numArray.Length };
-					Debug.LogFormat("TreeLimit: we have {0} bytes of extra trees", length);
+                    Debug.LogFormat("[TreeUnlimiter::CustomSerializer.Deserialize()]: we have {0} bytes of extra trees", length);
 					if ((int)numArray.Length < 2 || (int)numArray.Length % 2 != 0)
 					{
-                        Debug.Log("TreeUnlimiter: Invalid chunk size");
+                        Debug.Log("[TreeUnlimiter::CustomSerializer.Deserialize()]:: Invalid chunk size");
 						return false;
 					}
 					TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
@@ -743,7 +748,7 @@ namespace TreeUnlimiter
 					if (num2 != 1)
 					{
 						object[] objArray = new object[] { numArray1[0], num2, numArray[0], numArray[1] };
-                        Debug.LogFormat("TreeUnlimiter: Wrong version ({0}|{1}|{2},{3}).", objArray);
+                        Debug.LogFormat("[TreeUnlimiter::CustomSerializer.Deserialize()]: Wrong version ({0}|{1}|{2},{3}).", objArray);
 						return false;
 					}
 					int num3 = 0;
@@ -778,13 +783,13 @@ namespace TreeUnlimiter
 						{
 							Exception exception = exception1;
 							object[] length1 = new object[] { i, num4, (int)numArray1.Length };
-							Debug.LogFormat("While fetching tree {0} in pos {1} of {2}", length1);
+                            Debug.LogFormat("[TreeUnlimiter::CustomSerializer.Deserialize()]: While fetching tree {0} in pos {1} of {2}", length1);
 							Debug.LogException(exception);
 							throw exception;
 						}
 					}
 					object[] treeLimit = new object[] { num3, LimitTreeManager.Helper.TreeLimit - 262144 };
-                    Debug.LogFormat("TreeUnlimiter: Loaded {0} additional trees (out of {1} possible)", treeLimit);
+                    Debug.LogFormat("[TreeUnlimiter::CustomSerializer.Deserialize()]: Loaded {0} additional trees (out of {1} possible)", treeLimit);
 					return true;
 				}
 			}
@@ -814,7 +819,7 @@ namespace TreeUnlimiter
 					}
 				}
 				object[] treeLimit = new object[] { num, LimitTreeManager.Helper.TreeLimit - 262144, nums.Count * 2 };
-                Debug.LogFormat("TreeUnlimiter: used {0} of {1} extra trees, size in savegame: {2} bytes", treeLimit);
+                Debug.LogFormat("[TreeUnlimiter::CustomSerializer.Serialize()]:: Used {0} of {1} extra trees, size in savegame: {2} bytes", treeLimit);
 				Singleton<SimulationManager>.instance.m_serializableDataStorage["mabako/unlimiter"] = nums.SelectMany<ushort, byte>((ushort v) => BitConverter.GetBytes(v)).ToArray<byte>();
 			}
 		}
@@ -829,17 +834,20 @@ namespace TreeUnlimiter
 			{
 				short num;
 				short num1;
-				LimitTreeManager.Helper.EnsureInit();
+                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter::LimitTreeManager::Data:Deserialize()] calling Ensure Init"); }
+                LimitTreeManager.Helper.EnsureInit(1);
 				Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginDeserialize(s, "TreeManager");
 				TreeManager treeManager = Singleton<TreeManager>.instance;
 				TreeInstance[] mBuffer = treeManager.m_trees.m_buffer;
-				uint[] mTreeGrid = treeManager.m_treeGrid;
+                if(TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter::LimitTreeManager::Data:Deserialize()] mbuffersize=" + mBuffer.Length.ToString()); }
+                uint[] mTreeGrid = treeManager.m_treeGrid;
 				int num2 = 262144;
 				int length = (int)mTreeGrid.Length;
 				treeManager.m_trees.ClearUnused();
 				SimulationManager.UpdateMode mUpdateMode = Singleton<SimulationManager>.instance.m_metaData.m_updateMode;
 				bool flag = (mUpdateMode == SimulationManager.UpdateMode.NewAsset ? true : mUpdateMode == SimulationManager.UpdateMode.LoadAsset);
-				for (int i = 0; i < length; i++)
+                //if (mUpdateMode == SimulationManager.UpdateMode.NewAsset) { num2 = mBuffer.Length; }
+                for (int i = 0; i < length; i++)
 				{
 					mTreeGrid[i] = 0;
 				}
@@ -966,6 +974,11 @@ namespace TreeUnlimiter
 				{
 					if (!LimitTreeManager.Helper.UseModifiedTreeCap)
 					{
+                        SimulationManager.UpdateMode mUpdateMode = Singleton<SimulationManager>.instance.m_metaData.m_updateMode;
+                        if (mUpdateMode == SimulationManager.UpdateMode.NewAsset || mUpdateMode == SimulationManager.UpdateMode.LoadAsset)
+                        { return 64; }
+                        if (SimulationManager.instance.m_ManagersWrapper.loading.currentMode == ICities.AppMode.AssetEditor)
+                        { return 64; }
 						return 262144;
 					}
 					return 1048576;
@@ -981,27 +994,31 @@ namespace TreeUnlimiter
 						return false;
 					}
 					SimulationManager.UpdateMode mUpdateMode = Singleton<SimulationManager>.instance.m_metaData.m_updateMode;
-					if (mUpdateMode == SimulationManager.UpdateMode.LoadGame)
+					if (mUpdateMode == SimulationManager.UpdateMode.LoadGame || mUpdateMode ==  SimulationManager.UpdateMode.LoadMap)
 					{
 						return true;
 					}
-					return mUpdateMode == SimulationManager.UpdateMode.NewGame;
+                    if (mUpdateMode == SimulationManager.UpdateMode.NewGame || mUpdateMode == SimulationManager.UpdateMode.NewMap)
+                    {
+                        return true;
+                    }
+                    return false;
 				}
 			}
 
-			internal static void EnsureInit()
+			internal static void EnsureInit(byte caller)
 			{
 				uint num;
 				object[] objArray = new object[] { (Mod.IsEnabled ? "enabled" : "disabled"), (LimitTreeManager.Helper.UseModifiedTreeCap ? "actived" : "not-actived") };
-                Debug.LogFormat("[TreeUnlimiter] This mod is {0}. Tree unlimiter mod is {0}.", objArray);
-                //note the above logging should probably be enabled only in debug mode to prevent spam, touch for next version.
+                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.LogFormat("[TreeUnlimiter::EnsureInit()] This mod is {0}. Tree unlimiter mode is {1}.", objArray); }
                 if (!LimitTreeManager.Helper.UseModifiedTreeCap)
 				{
+                    if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.LogFormat("[TreeUnlimiter::EnsureInit()] TreeLimit=" + LimitTreeManager.Helper.TreeLimit ); }
 					return;
 				}
 				if ((int)Singleton<TreeManager>.instance.m_trees.m_buffer.Length != LimitTreeManager.Helper.TreeLimit)
 				{
-                    Debug.LogFormat("[TreeUnlimiter] Updating TreeManager", new object[0]);
+                    Debug.LogFormat("[TreeUnlimiter::EnsureInit()] Updating TreeManager", new object[0]);
 					Singleton<TreeManager>.instance.m_trees = new Array32<TreeInstance>((uint)LimitTreeManager.Helper.TreeLimit);
 					Singleton<TreeManager>.instance.m_updatedTrees = new ulong[16384];
 					Singleton<TreeManager>.instance.m_trees.CreateItem(out num);

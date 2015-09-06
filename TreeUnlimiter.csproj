@@ -40,6 +40,7 @@
       <HintPath>.\UnlimiterReferences\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="System" />
     <Reference Include="UnityEngine">
       <HintPath>.\UnlimiterReferences\UnityEngine.dll</HintPath>
       <Private>False</Private>
@@ -67,6 +68,7 @@
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Unlimiter\Loader.cs" />
     <Compile Include="Unlimiter\Mod.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>

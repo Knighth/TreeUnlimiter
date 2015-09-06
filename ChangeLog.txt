@@ -1,0 +1,19 @@
+9-xx-2015 - v1xxx_Build_001 [planned]
+Afterdark update and dlc related changes planned.
+
+
+9-5-2015 v111c_Build_003
+
+- Removed some unneccessary logging for each redirection call, it's was just polluting the log file.
++ Added additional logging for debug purposes but conditioned them to not appear for nomal users.  
++ Added ability for the mod to work in the map editor, seems to work, extensive test not completed.
++ Had to add some code to flush\rebuild the tree buffer after a new-map; unlike game loads, fresh "new maps"
+  were retaining trees loaded by a previous 'load map', very wierd.  
+- Tried but failed to get the mod to get the asset editor to work right for trees with the mod loaded.
++ Assembly Company Name field contains build string, done so main assembly ver stamp always
+ matches C\O build# for now.
+
+
+7-1-2015 v111c_Build_001 
+Initial updates for CSL 1.1.1c compatibility (few lines added to mirror c\o function updates) nothing major.
+ 
