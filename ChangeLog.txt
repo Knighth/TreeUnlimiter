@@ -1,8 +1,32 @@
+
+Installation Reminder: in your \steamapps folder locate the folder
+\workshop\content\255710\455403039 you can just replace the old dll with this new one until it's pushed out via
+steam workshop update.
+
+**ChangeLog**
+-----------------------
+
 9-xx-2015 - v1xxx_Build_001 [planned]
-Afterdark update and dlc related changes planned.
+Afterdark update and dlc related changes\recompiling planned.
 
 
-9-5-2015 v111c_Build_003
+9-8-2015 v111c_Build_005
++ Reworked redirection\detours code to be able to reverse the patching. 
+  Basically undid prior method in v003 of patching only once.
+  Reworked the entire code so that we a) don't do redirection until map\game load if not already patched,
+  b) un-do patching upon unloading map\game to main menu or reloading. c) revert patching upon entering asset editor.
+  d) This allows asset-editor to be used while mod is turned on (beta).
+
++ Turning on and off the plugin does not require a restart of the game, it will unload it's patching and reset things
+  when toggled from enabled to disabled. This mean if you still have issues with the Asset Editor you can just
+  disable the plugin and re-enter the Asset Editor without having to exit the game.
+
++ Minor tweak to jury rig and edge case were new maps were getting a -1 tree count (same for new assets). 
+
++ Added logging option via standard gui options for mods, stored in config file TreeUnlimiterConfig.xml in root
+  of CSL steam gamefolder.
+
+9-6-2015 v111c_Build_003
 
 - Removed some unneccessary logging for each redirection call, it's was just polluting the log file.
 + Added additional logging for debug purposes but conditioned them to not appear for nomal users.  
@@ -10,6 +34,7 @@ Afterdark update and dlc related changes planned.
 + Had to add some code to flush\rebuild the tree buffer after a new-map; unlike game loads, fresh "new maps"
   were retaining trees loaded by a previous 'load map', very wierd.  
 - Tried but failed to get the mod to get the asset editor to work right for trees with the mod loaded.
++ Changed rediction code to only fire once per CSL load.. loads on start doesn't fire upon every map load.
 + Assembly Company Name field contains build string, done so main assembly ver stamp always
  matches C\O build# for now.
 
