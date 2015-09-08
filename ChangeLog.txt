@@ -34,13 +34,10 @@ Afterdark update and dlc related changes\recompiling planned.
 + Had to add some code to flush\rebuild the tree buffer after a new-map; unlike game loads, fresh "new maps"
   were retaining trees loaded by a previous 'load map', very wierd.  
 - Tried but failed to get the mod to get the asset editor to work right for trees with the mod loaded.
-<<<<<<< HEAD
 + Changed rediction code to only fire once per CSL load.. loads on start doesn't fire upon every map load.
-=======
 + There were cases where the redirection calls were being called more times then needed, they should in theory now only
   be called once while the mod loads and not on each map load.
->>>>>>> origin/master
-+ Assembly Company Name field contains build string, done so main assembly ver stamp always
++ Assembly Company Name\copyright fields contains build string, done so main assembly ver stamp always
  matches C\O build# for now.
 
 
