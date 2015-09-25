@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Xml.Serialization;
 using UnityEngine;
@@ -9,17 +9,25 @@ namespace TreeUnlimiter
     {
 
         public bool DebugLogging = false;
+        public byte DebugLoggingLevel = 0;
 
 
         public static void Serialize(string filename, Configuration config)
         {
             var serializer = new XmlSerializer(typeof(Configuration));
-
-            using (var writer = new StreamWriter(filename))
+            try
             {
-                serializer.Serialize(writer, config);
+                using (var writer = new StreamWriter(filename))
+                {
+                    serializer.Serialize(writer, config);
+                }
+            }
+            catch (Exception ex1)
+            {
+                Debug.Log("[TreeUnlimter:ConfiguationSeralize] Had a problem saving the config file  Error: " + ex1.Message.ToString());
             }
         }
+
 
         public static Configuration Deserialize(string filename)
         {
@@ -33,9 +41,9 @@ namespace TreeUnlimiter
                     return config;
                 }
             }
-            catch( Exception ex1)
+            catch (Exception ex1)
             {
-                Debug.Log("[TreeUnlimter:ConfiguationDeseralize] " + ex1.Message.ToString()); 
+                Debug.Log("[TreeUnlimter:ConfiguationDeseralize] Could not find configuration file, a new one will be generated." + ex1.Message.ToString());
             }
 
             return null;

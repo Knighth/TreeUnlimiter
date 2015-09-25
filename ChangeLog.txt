@@ -6,8 +6,28 @@ steam workshop update.
 **ChangeLog**
 -----------------------
 
-9-xx-2015 - v1xxx_Build_001 [planned]
-Afterdark update and dlc related changes\recompiling planned.
+9-25-2015 - v1.2.0_Build_004
++ Just a title change from Trees Unlimiter 1.1 to Tree Unlimiter Mod
+
+9-24-2015 - v1.2.0_Build_003
+  Recovery\rebuilding of build002 due to source code fkup on my part and lost all AD changes.
+
+
+9-20-2015 - v1.2.0_Build_002 
+Afterdark patch update 
++ Recompiled for Afterdark update; however prior version should still work.
+
++ Found the root of the -1\0 tree item bug in editors that I had previously manually hacked around, 
+  disabled that hack around code. Fix was a certain deserialize related line from the original that started
+  at 0 instead of 1 for one of loops.
+
++ Split out and now re-direct calls to TreeManager.FinalizeTree() to our own. 
+  Previously our ReleaseTreeimplementation() carried all the finalizetree() code inside itself instead of calling
+  out... I don't know why that was originally done but for now unless there is a problem I've sperated it out
+  to it's own proper redirected function.  Maybe back in 1.0.0.0 of CSL C\O had it all combined.
+  I can probably not redirect ReleaseTreeimplementation() anymore now that I've done the above, but leaving for now
+  till I feel safe and this version has been in the wild a while.
+
 
 
 9-8-2015 v111c_Build_005
@@ -15,16 +35,18 @@ Afterdark update and dlc related changes\recompiling planned.
   Basically undid prior method in v003 of patching only once.
   Reworked the entire code so that we a) don't do redirection until map\game load if not already patched,
   b) un-do patching upon unloading map\game to main menu or reloading. c) revert patching upon entering asset editor.
-  d) This allows asset-editor to be used while mod is turned on (beta).
+  d) This allows asset-editor to be used while mod is turned on (or at least in my limited testing things seem to work fine now).
 
 + Turning on and off the plugin does not require a restart of the game, it will unload it's patching and reset things
   when toggled from enabled to disabled. This mean if you still have issues with the Asset Editor you can just
   disable the plugin and re-enter the Asset Editor without having to exit the game.
 
-+ Minor tweak to jury rig and edge case were new maps were getting a -1 tree count (same for new assets). 
++ Minor tweak to jury rig and edge case were new maps were getting a -1 tree count (same for new assets) due to itemcount=0. 
 
 + Added logging option via standard gui options for mods, stored in config file TreeUnlimiterConfig.xml in root
-  of CSL steam gamefolder.
+  of CSL steam gamefolder. It's primarly just for debugging during development and unless instructed probably
+  should never be needed by typical user, left in the code just in case someone runs into into issues and I need
+  them to post a super detailed log.
 
 9-6-2015 v111c_Build_003
 
@@ -33,12 +55,12 @@ Afterdark update and dlc related changes\recompiling planned.
 + Added ability for the mod to work in the map editor, seems to work, extensive test not completed.
 + Had to add some code to flush\rebuild the tree buffer after a new-map; unlike game loads, fresh "new maps"
   were retaining trees loaded by a previous 'load map', very wierd.  
-- Tried but failed to get the mod to get the asset editor to work right for trees with the mod loaded.
+- Tried but failed to get the mod while using the asset editor to work right for trees with the mod loaded.
 + Changed rediction code to only fire once per CSL load.. loads on start doesn't fire upon every map load.
 + There were cases where the redirection calls were being called more times then needed, they should in theory now only
   be called once while the mod loads and not on each map load.
 + Assembly Company Name\copyright fields contains build string, done so main assembly ver stamp always
- matches C\O build# for now.
+ matches C\O build# for now and a user can right click in windows and see what copy they actually have.
 
 
 7-1-2015 v111c_Build_001 

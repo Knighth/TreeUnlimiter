@@ -3,19 +3,15 @@ using System;
 
 namespace TreeUnlimiter
 {
-	public class DataExtension : SerializableDataExtensionBase
-	{
-		public DataExtension()
-		{
-		}
+    public class DataExtension : SerializableDataExtensionBase
+    {
+        public override void OnLoadData()
+        {
+        }
 
-		public override void OnLoadData()
-		{
-		}
-
-		public override void OnSaveData()
-		{
-			LimitTreeManager.CustomSerializer.Serialize();
-		}
-	}
+        public override void OnSaveData()
+        {
+            LimitTreeManager.CustomSerializer.Serialize();
+        }
+    }
 }
