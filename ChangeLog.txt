@@ -5,9 +5,19 @@ steam workshop update.
 
 **ChangeLog**
 -----------------------
+9-26-2015 - v1.2.0_Build_006
+  Added option to not have trees have an effect on wind like the game normally does.
+  When option is enabled we redirect WindManager.CalculateSelfHeight(), and inside there in our version
+  if option enabled we don't add the height of the tree to the terrain in a given area 
+  to the height for the windcell.
+
+9-25-2015 - v1.2.0_Build_005
++ reverted calculation bug in calculate Area height introduced with the prior source code fkup
+  bug was difference between something being converted from float to int and back in CalculateAreaHeight().
 
 9-25-2015 - v1.2.0_Build_004
-+ Just a title change from Trees Unlimiter 1.1 to Tree Unlimiter Mod
++ Just a display name\title change from Trees Unlimiter 1.1 to Unlimited Trees Mod; internally namespace and such is
+  unchanged though.
 
 9-24-2015 - v1.2.0_Build_003
   Recovery\rebuilding of build002 due to source code fkup on my part and lost all AD changes.

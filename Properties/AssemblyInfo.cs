@@ -6,9 +6,9 @@ using System.Security;
 using System.Security.Permissions;
 [assembly: AssemblyVersion("1.2.0.0")]
 [assembly: Debuggable(DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints)]
-[assembly: AssemblyCompany("v120-f3_build_04")]
+[assembly: AssemblyCompany("v120-f3_build_06")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCopyright("Copyright ©  2015 - v1.2.0-f3_build_04")]
+[assembly: AssemblyCopyright("Copyright ©  2015 - v1.2.0-f3_build_06")]
 [assembly: AssemblyDescription("Cities Skyline Mod - Unlimited Trees Mod")]
 [assembly: AssemblyFileVersion("1.2.0.0")]
 [assembly: AssemblyProduct("Unlimited Trees Mod")]

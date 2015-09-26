@@ -10,7 +10,7 @@ namespace TreeUnlimiter
 
         public bool DebugLogging = false;
         public byte DebugLoggingLevel = 0;
-
+        public bool UseNoWindEffects = false;
 
         public static void Serialize(string filename, Configuration config)
         {

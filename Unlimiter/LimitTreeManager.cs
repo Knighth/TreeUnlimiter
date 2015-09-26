@@ -58,60 +58,59 @@ namespace TreeUnlimiter
         {
             unsafe
             {
-                int num1 = Mathf.Max((int)((minX - 8f) / 32f + 270f), 0);
-                int num2 = Mathf.Max((int)((minZ - 8f) / 32f + 270f), 0);
-                int num3 = Mathf.Min((int)((maxX + 8f) / 32f + 270f), 539);
-                int num4 = Mathf.Min((int)((maxZ + 8f) / 32f + 270f), 539);
-                num = 0;
-                min = 1024f;
-                avg = 0f;
-                max = 0f;
-                for (int i = num2; i <= num4; i++)
-                {
-                    for (int j = num1; j <= num3; j++)
+                    int num1 = Mathf.Max((int)((minX - 8f) / 32f + 270f), 0);
+                    int num2 = Mathf.Max((int)((minZ - 8f) / 32f + 270f), 0);
+                    int num3 = Mathf.Min((int)((maxX + 8f) / 32f + 270f), 539);
+                    int num4 = Mathf.Min((int)((maxZ + 8f) / 32f + 270f), 539);
+                    num = 0;    //OUT number of times hit.
+                    min = 1024f; //OUT Min height seen.
+                    avg = 0f;  //Out avg height seen .
+                    max = 0f;  //Out Max height seen.
+                    for (int i = num2; i <= num4; i++)
                     {
-                        uint mTreeGrid = tm.m_treeGrid[i * 540 + j];
-                        int num5 = 0;
-                        while (mTreeGrid != 0)
+                        for (int j = num1; j <= num3; j++)
                         {
-                            Vector3 position = tm.m_trees.m_buffer[mTreeGrid].Position;
-                            if (Mathf.Max(Mathf.Max(minX - 8f - position.x, minZ - 8f - position.z), Mathf.Max(position.x - maxX - 8f, position.z - maxZ - 8f)) < 0f)
+                            uint mTreeGrid = tm.m_treeGrid[i * 540 + j];
+                            int num5 = 0;
+                            while (mTreeGrid != 0)
                             {
-                                TreeInfo info = tm.m_trees.m_buffer[mTreeGrid].Info;
-                                if (info != null)
+                                Vector3 position = tm.m_trees.m_buffer[mTreeGrid].Position;
+                                if (Mathf.Max(Mathf.Max(minX - 8f - position.x, minZ - 8f - position.z), Mathf.Max(position.x - maxX - 8f, position.z - maxZ - 8f)) < 0f)
                                 {
-                                    Randomizer randomizer = new Randomizer(mTreeGrid);
-                                    float mMinScale = info.m_minScale + (float)randomizer.Int32(10000) * (info.m_maxScale - info.m_minScale) * 0.0001f;
-                                    float mSize = position.y + info.m_generatedInfo.m_size.y * mMinScale * 2f;
-                                    if (mSize < min)
+                                    TreeInfo info = tm.m_trees.m_buffer[mTreeGrid].Info;
+                                    if (info != null)
                                     {
-                                        min = mSize;
+                                        Randomizer randomizer = new Randomizer(mTreeGrid);
+                                        float mMinScale = info.m_minScale + (float)randomizer.Int32(10000) * (info.m_maxScale - info.m_minScale) * 0.0001f;
+                                        float mSize = position.y + info.m_generatedInfo.m_size.y * mMinScale * 2f;
+                                        if (mSize < min)
+                                        {
+                                            min = mSize;
+                                        }
+                                        avg = avg + mSize;
+                                        if (mSize > max)
+                                        {
+                                            max = mSize;
+                                        }
+                                        num = num + 1;
                                     }
-                                    avg = avg + mSize;
-                                    if (mSize > max)
-                                    {
-                                        max = mSize;
-                                    }
-                                    num = num + 1;
                                 }
+                                mTreeGrid = tm.m_trees.m_buffer[mTreeGrid].m_nextGridTree;
+                                int num6 = num5 + 1;
+                                num5 = num6;
+                                if (num6 < LimitTreeManager.Helper.TreeLimit )
+                                {
+                                    continue;
+                                }
+                                CODebugBase<LogChannel>.Error(LogChannel.Core, string.Concat("Invalid list detected!\n", Environment.StackTrace));
+                                break;
                             }
-                            mTreeGrid = tm.m_trees.m_buffer[mTreeGrid].m_nextGridTree;
-                            int num6 = num5 + 1;
-                            num5 = num6;
-                            if (num6 < LimitTreeManager.Helper.TreeLimit)
-                            {
-                                continue;
-                            }
-                            CODebugBase<LogChannel>.Error(LogChannel.Core, string.Concat("Invalid list detected!\n", Environment.StackTrace));
-                            break;
                         }
                     }
-                }
-                if (avg != 0f)
-                {
-                    return;
-                }
-                avg = avg / (float)num;
+                    if (avg != 0f)
+                    {
+                        avg = avg / (float)num;
+                    }
             }
         }
 
@@ -655,7 +654,7 @@ namespace TreeUnlimiter
                     prefab.SetRenderParameters(j, num1);
                 }
             }
-            ThreadHelper.dispatcher.Dispatch(() => {
+            ColossalFramework.Threading.ThreadHelper.dispatcher.Dispatch(() => {
                 tm.GetType().GetField("m_lastShadowRotation", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(tm, new Quaternion());
                 tm.GetType().GetField("m_lastCameraRotation", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(tm, new Quaternion());
             });
@@ -766,6 +765,7 @@ namespace TreeUnlimiter
                                 uint num7 = num;
                                 num = num7 + 1;
                                 mBuffer[i].m_posX = (short)numArray1[num7];
+                                //mBuffer[i].m_posY = 0; // we do later for entire instead of here.
                                 uint num8 = num;
                                 num = num8 + 1;
                                 mBuffer[i].m_posZ = (short)numArray1[num8];

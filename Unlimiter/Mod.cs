@@ -28,6 +28,8 @@ namespace TreeUnlimiter
         public static bool IsSetupActive = false;
         public static bool DEBUG_LOG_ON = false;
         public static byte DEBUG_LOG_LEVEL = 0;
+        public static bool USE_NO_WINDEFFECTS = false;
+
         //9-25-2015--notneeded    public static SimulationManager.UpdateMode LastMode = SimulationManager.UpdateMode.Undefined;
         private static Dictionary<MethodInfo, RedirectCallsState> redirectDic = new Dictionary<MethodInfo, RedirectCallsState>();
         public Configuration config;
@@ -37,11 +39,6 @@ namespace TreeUnlimiter
         {
             get
             {
-                if (this.config != null)
-                {
-                    Mod.DEBUG_LOG_ON = this.config.DebugLogging;
-                    Mod.DEBUG_LOG_LEVEL = this.config.DebugLoggingLevel;
-                }
                 if (!Mod.IsInited)
                 {
                     Mod.init();
@@ -61,28 +58,42 @@ namespace TreeUnlimiter
 
         public Mod()
         {
-            this.config = Configuration.Deserialize(Mod.MOD_CONFIGPATH);
-            if (this.config == null)
+            config = Configuration.Deserialize(MOD_CONFIGPATH);
+            if (config == null)
             {
-                this.config = new Configuration();
-                this.config.DebugLogging = false;
-                this.config.DebugLoggingLevel = 0;
+                config = new Configuration();
+                config.DebugLogging = false;
+                config.DebugLoggingLevel = 0;
+                config.UseNoWindEffects = false;
+            }
+            if (config != null)
+            {
+                DEBUG_LOG_ON = config.DebugLogging;
+                DEBUG_LOG_LEVEL = config.DebugLoggingLevel;
+                USE_NO_WINDEFFECTS = config.UseNoWindEffects;
             }
         }
 
 
         private void LoggingChecked(bool en)
         {
-            Mod.DEBUG_LOG_ON = en;
-            this.config.DebugLogging = en;
-            Configuration.Serialize(Mod.MOD_CONFIGPATH, this.config);
+            DEBUG_LOG_ON = en;
+            config.DebugLogging = en;
+            Configuration.Serialize(MOD_CONFIGPATH, this.config);
+        }
+        private void UseNoWindChecked(bool en)
+        {
+            USE_NO_WINDEFFECTS = en;
+            config.UseNoWindEffects = en;
+            Configuration.Serialize(MOD_CONFIGPATH, this.config);
         }
 
         //icities interface for gui option setup
         public void OnSettingsUI(UIHelperBase helper)
         {
-            UIHelperBase uIHelperBase = helper.AddGroup("TreeUnlimiter Logging");
-            uIHelperBase.AddCheckbox("Enable Verbose Logging", Mod.DEBUG_LOG_ON, new OnCheckChanged(this.LoggingChecked));
+            UIHelperBase uIHelperBase = helper.AddGroup("Unlimited Trees Options");
+            uIHelperBase.AddCheckbox("Disable tree effects on wind", Mod.USE_NO_WINDEFFECTS, new OnCheckChanged(UseNoWindChecked));
+            uIHelperBase.AddCheckbox("Enable Verbose Logging", Mod.DEBUG_LOG_ON, new OnCheckChanged(LoggingChecked));
         }
 
 
@@ -102,32 +113,32 @@ namespace TreeUnlimiter
 
                 if (pluginInfo == null)
                 {
-                    Mod.IsEnabled = false;
+                    IsEnabled = false;
 //                    if (IsSetupActive == true) { Mod.ReveseSetup(); }; //if we can't find ourselves let's man darn sure we're not around anymore.
                     Debug.Log("[TreeUnlimiter::PluginsChanged()] Can't find self. No idea if this mod is enabled");
                 }
                 else
                 {
-                    Mod.IsEnabled = pluginInfo.isEnabled;
-                    if (Mod.IsEnabled)
+                    IsEnabled = pluginInfo.isEnabled;
+                    if (IsEnabled)
                     {
                         Debug.Log("[TreeUnlimiter] v" + VERSION_BUILD_NUMBER + "  Mod is enabled, id:" + pluginInfo.publishedFileID.AsUInt64.ToString());
-                        if (!Mod.DEBUG_LOG_ON)
+                        if (!DEBUG_LOG_ON)
                         {
                             //9-25-2015 I should probably dump this it's hangover i've all but removed 
-                            Mod.DEBUG_LOG_LEVEL = 0;  //level must be set manually in configfile.
+                            DEBUG_LOG_LEVEL = 0;  //level must be set manually in configfile.
                         }
                         else
                         {
-                            Debug.Log("[TreeUnlimiter:PluginChanged] DEBUG_LOG_LEVEL " + Mod.DEBUG_LOG_LEVEL.ToString());
+                            Debug.Log("[TreeUnlimiter:PluginChanged] DEBUG_LOG_LEVEL " + DEBUG_LOG_LEVEL.ToString());
                         }
                     }
                     else
                     {
                         Debug.Log("[TreeUnlimiter] Mod is disabled, id:" + pluginInfo.publishedFileID.AsUInt64.ToString());
-                        if (Mod.IsSetupActive)
+                        if (IsSetupActive)
                         {
-                            Mod.ReveseSetup();  //make sure we've cleanuped after being disabled.
+                            ReveseSetup();  //make sure we've cleanuped after being disabled.
                         }
                     }
                 }
@@ -180,6 +191,9 @@ namespace TreeUnlimiter
                     MethodInfo methodInfo = methods[i];
                     RedirectCalls(typeof(TreeManager), typeof(LimitTreeManager), methodInfo.Name);
                 }
+                //If windoverride enabled.
+                if (USE_NO_WINDEFFECTS){RedirectCalls(typeof(WindManager), typeof(LimitWindManager), "CalculateSelfHeight");}
+
                 IsSetupActive = true;
                 if (DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter::Mod.Setup()]: Redirected Calls"); }
             }
