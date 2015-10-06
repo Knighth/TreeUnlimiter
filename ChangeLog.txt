@@ -5,8 +5,47 @@ steam workshop update.
 
 **ChangeLog**
 -----------------------
+10-6-2015 - v1.2.1_Build_002
+Summary: Basically just interal changes.
++ Minor enhancements for config file, add custom log feil ability, and not dumping a trace when no config file exists.
+~ Refactored initialization so that we don't 'depend' on PluginChange events anymore, though if someone has an old
+  version out there pre 11b\c when Onenabled\OnRemoved were added - like a pirated version we still try to work.
+  Basically we now use OnEnable\OnRemove to trigger initialization.
+  We also no longer fire our start up code upon the name being invoked, instead we just do that in the constructor
+  which was more or less same result as before.
+
+~ Added saving the config object to file upon the first time it gets created. This prevents the case of a new user
+  loading the mod, having a 'config object' created and used, but if they never touched the options screen
+  it technically never got saved and there for we would go the exception re-create route upon every load till they
+  did. This is change is really just cosmetic so we don't log errors. 
+
+~ Changed most calls from Debug.log to our own Logger.dbgLog wrapper to match above mentioned enhancement.
+  Also the log wrapper automatically adds the calling method name. This saves work on my end, and also
+  means we are technically storing less actual static text in our compiled dll. Only log call that doesn't use
+  our new log wrapper is the initial "mod has loaded' call.
+
+~ Comment documented more of the functions in source.
+
+
+10-4-2015 - v1.2.1_Build_001
+Summary: Account for other mod's exceptions causing problems. Semi-Bug fix.
++ Corrected workshopid field to be uLong not that it was actually causing a problem yet.
+
++ Bug fix: Adjusted for an unaccounted for case where mods before us would exception error during thier Loading.OnCreated
+  callbacks, found this stops further mods down the chain from having their OnCreated()'s called.
+  Unless the person was using Isolated Failures mod.
+  Details: We always assumed ours got called, but I also assumed that if our correct setup was not done during OnCreated
+  To try to do it during OnLevelLoaded. That was a mistake as it creates a bug in this case where
+  the mod think's it's setup correctly, but upon save will think there are 1million tree buffers when there
+  are still only 262k as the 'initing' of the new array size never happened during the load deserialize routine because
+  it never got fired because our redirects were not active yet due to aforementioned fallout from someone elses
+  exception. There is not too much we can do here other then to make sure NOT to try to setup ourselves in
+  OnLevelLoaded(), which i've corrected for now. Two - encourage other modders to try{}catch{} around their god dam
+  OnXXXX() overrides.
+  
+
 9-26-2015 - v1.2.0_Build_006
-  Added option to not have trees have an effect on wind like the game normally does.
++ Added option to not have trees have an effect on wind like the game normally does.
   When option is enabled we redirect WindManager.CalculateSelfHeight(), and inside there in our version
   if option enabled we don't add the height of the tree to the terrain in a given area 
   to the height for the windcell.

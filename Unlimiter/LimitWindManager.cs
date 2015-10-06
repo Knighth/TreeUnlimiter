@@ -28,15 +28,6 @@ namespace TreeUnlimiter
             //new - ignore tree data.
             if (Mod.USE_NO_WINDEFFECTS)   //My Additions to overide tree effects.
             {    
-                /*
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL >=2)
-                {
-                    Debug.Log(string.Concat("[TreeUnlimiter::LimitWindManager:CalculateSelfHeight] num=",
-                        num.ToString(), " num1=", num1.ToString(), " num2=", num2.ToString(), " num3=", num3.ToString(),
-                        " \n num4=", num4.ToString(), " num5=", num5.ToString(), " num6=", num6.ToString(),
-                        "\n Returning:", ((ushort)Mathf.Clamp(num6 + num7 >> 1, 0, 65535)).ToString()));
-                }
-                */
                 return (ushort)Mathf.Clamp(num1 + num2 >> 1, 0, 65535);
             }
 
@@ -45,9 +36,9 @@ namespace TreeUnlimiter
             int num4 = Mathf.RoundToInt(single1 * 64f); //treeavg height
             int num5 = Mathf.RoundToInt(single2 * 64f); //treemax height
             int num6 = num1 + (num4 - num1) * Mathf.Min(num3, 100) / 100; 
-            // num6 translated = TerrMin + (newTreeAvg -Terrainmin ) * Min(TreeHits,100) /100
+            // note:  num6 translated = TerrMin + (newTreeAvg -Terrainmin ) * Min(TreeHits,100) /100
             int num7 = Mathf.Max(num2, num5);
-            //num7 translated = max of (TerrainMaxheight or TreeMaxHeight)
+            // note: num7 translated = max of (TerrainMaxheight or TreeMaxHeight)
             //org
             return (ushort)Mathf.Clamp(num6 + num7 >> 1, 0, 65535);
 

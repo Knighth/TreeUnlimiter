@@ -11,6 +11,8 @@ namespace TreeUnlimiter
         public bool DebugLogging = false;
         public byte DebugLoggingLevel = 0;
         public bool UseNoWindEffects = false;
+        public bool UseCustomLogFile = false;
+        public string CustomLogFilePath = Mod.MOD_DEFAULT_LOG_PATH;
 
         public static void Serialize(string filename, Configuration config)
         {
@@ -24,7 +26,7 @@ namespace TreeUnlimiter
             }
             catch (Exception ex1)
             {
-                Debug.Log("[TreeUnlimter:ConfiguationSeralize] Had a problem saving the config file  Error: " + ex1.Message.ToString());
+                Logger.dbgLog("Had a problem saving the config file  Error: ",ex1,true);
             }
         }
 
@@ -41,9 +43,17 @@ namespace TreeUnlimiter
                     return config;
                 }
             }
+            catch(FileNotFoundException ex1)
+            {
+                Logger.dbgLog("Config file did not exists, harmless we'll create a new one.",ex1,false);
+            }
             catch (Exception ex1)
             {
-                Debug.Log("[TreeUnlimter:ConfiguationDeseralize] Could not find configuration file, a new one will be generated." + ex1.Message.ToString());
+                string tmpstr = "Could not load configuration file, a new one will be generated.";
+                if (Mod.DEBUG_LOG_ON)
+                { Logger.dbgLog(tmpstr, ex1, true); }
+                else
+                { Logger.dbgLog(tmpstr, ex1, false); }
             }
 
             return null;
