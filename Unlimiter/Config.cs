@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Xml.Serialization;
 using UnityEngine;
@@ -9,17 +9,27 @@ namespace TreeUnlimiter
     {
 
         public bool DebugLogging = false;
-
+        public byte DebugLoggingLevel = 0;
+        public bool UseNoWindEffects = false;
+        public bool UseCustomLogFile = false;
+        public string CustomLogFilePath = Mod.MOD_DEFAULT_LOG_PATH;
 
         public static void Serialize(string filename, Configuration config)
         {
             var serializer = new XmlSerializer(typeof(Configuration));
-
-            using (var writer = new StreamWriter(filename))
+            try
             {
-                serializer.Serialize(writer, config);
+                using (var writer = new StreamWriter(filename))
+                {
+                    serializer.Serialize(writer, config);
+                }
+            }
+            catch (Exception ex1)
+            {
+                Logger.dbgLog("Had a problem saving the config file  Error: ",ex1,true);
             }
         }
+
 
         public static Configuration Deserialize(string filename)
         {
@@ -33,9 +43,17 @@ namespace TreeUnlimiter
                     return config;
                 }
             }
-            catch( Exception ex1)
+            catch(FileNotFoundException ex1)
             {
-                Debug.Log("[TreeUnlimter:ConfiguationDeseralize] " + ex1.Message.ToString()); 
+                Logger.dbgLog("Config file did not exists, harmless we'll create a new one.",ex1,false);
+            }
+            catch (Exception ex1)
+            {
+                string tmpstr = "Could not load configuration file, a new one will be generated.";
+                if (Mod.DEBUG_LOG_ON)
+                { Logger.dbgLog(tmpstr, ex1, true); }
+                else
+                { Logger.dbgLog(tmpstr, ex1, false); }
             }
 
             return null;

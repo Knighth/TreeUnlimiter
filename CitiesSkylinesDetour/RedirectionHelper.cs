@@ -27,6 +27,7 @@ using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using TreeUnlimiter;
 namespace CitiesSkylinesDetour
 {
     // Struct to contain the state of the redirection of each call\method
@@ -134,7 +135,7 @@ namespace CitiesSkylinesDetour
                 }
                 if (jitInfoFrom == null || jitInfoTo == null)
                 {
-                    Debug.Log("[TreeUnlimiter] Detour: Could not find methods");
+                     Logger.dbgLog("Detour: Could not find methods!");
                     return;
                 }
                 // copy over code_start, used_regs, code_size and ignore the rest for now.

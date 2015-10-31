@@ -70,7 +70,9 @@
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Unlimiter\LimitWindManager.cs" />
     <Compile Include="Unlimiter\Loader.cs" />
+    <Compile Include="Unlimiter\Logger.cs" />
     <Compile Include="Unlimiter\Mod.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
