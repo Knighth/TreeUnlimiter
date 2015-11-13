@@ -13,6 +13,14 @@ namespace TreeUnlimiter
         public bool UseNoWindEffects = false;
         public bool UseCustomLogFile = false;
         public string CustomLogFilePath = Mod.MOD_DEFAULT_LOG_PATH;
+        public int ScaleFactor = 4;
+
+
+        public static void ValidateConfig(ref Configuration theconfig)
+        {
+            if (theconfig.ScaleFactor < 4 || theconfig.ScaleFactor > 8)
+            { theconfig.ScaleFactor = 4; }
+        }
 
         public static void Serialize(string filename, Configuration config)
         {

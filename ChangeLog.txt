@@ -3,8 +3,58 @@ Installation Reminder: in your \steamapps folder locate the folder
 \workshop\content\255710\455403039 you can just replace the old dll with this new one until it's pushed out via
 steam workshop update.
 
+
+
 **ChangeLog**
 -----------------------
+11-13-2015 -v1.2.2-f3_Build_002 (beta)
+Summary: Major reworking of treedata save formate and serialize and deserialze processes.
+ - removed Onplugin change related code finally, code still there in beta but it's dead code.
+  only possible effect really should be for anyone with pirated version < v1.1.1
+
+ + Changed save format version from 1 to 3. (v2 was used during testing)
+ + New format adds addtional header items to the saved byte array.
+   Bytes 0-1 still == ushort save format version number
+   bytes 2-5 == uint32 that stores the size of the tree array when the save happened.
+   bytes 6-9 == uint32 that stotes the actual count of the number of trees that were saved.
+   bytes 10-13 == uint32 reserved for future use
+   bytes 14-17 == uint32 reserved for future use
+   bytes 18-19 == ushort Save Flags; 0=none 1= Packedflag rest == reserved for future use;    
+ + All saves are now in format v3 
+ + Deserialize methods will detect v1 and load using original method.
+ + Deserialize methods will detect v2+ and load using new methods based on data in the header.
+ + Serialize method now works as follows. First our serializer runs, if it finds that there are
+   more then 266144 'created' trees it'll go ahead and save those trees in our private datastream.
+   It will now only save 'created' ones not all the empty entries like it used too. Then it will
+   markup the header information with how many it saved.
+   Next the overridden default serializer will run, if the list of real tress is empty for some
+   reason, it'll just go ahead and save everything in tree buffer up to default limit of 262144.
+   If list of 'created' trees exists then it will run through that list 262144 times but inserting
+   real trees first, then dummy trees if it runs out for the rest. This way we're always storing
+   the first 262144 real trees in the default space of the save.
+
+ + Added <ScaleFactor>4</ScaleFactor> to configuation file options. It is not added in gui on
+   purpose.  The setting now controls the number of trees allowed in chunks of 262144.
+   Valid settings are 4 (default),5,6,7,8; 4 == 1million 5=1.25million ect. If set higher then 8
+   or lower then 4, then 4 will be used. This now allows up to 2million trees. It's not added to
+   the gui options because this is going to be technically 'unsupported feature' even though yes
+   it works and yes all the other code changes have been adjusted for everything.
+
+ + Afore mentioned changes allows us to save adding lots of dead space to a save\map file.
+   As an example a save with 300k real trees previously using the 1048576limit would save
+   about 1 Megabyte in the save file space with the new method. The savings goes up\down
+   depending on the number of unused trees in the scaled size one uses. 8 bytes is saved per
+   unused tree, additionally trees that used to be saved as part of our extra data are now
+   saved\packed down into the default range, so even more space can be saved. This has the
+   added benefit that if the mod is disabled at least 262144 trees will be loaded, where as
+   in the past it was luck of the draw based on what index a tree might have been saved in.
+   ie if 500k trees and only 100 were in the index from 0-262144k then only 100k would be
+   loaded if the mod was not loaded, now 262144k of them will be loaded.
+
+ ~ These benefits are only noticed upon saving\resaving an existing file.
+ 
+ 
+
 10-6-2015 - v1.2.1_Build_002
 Summary: Basically just interal changes.
 + Minor enhancements for config file, add custom log feil ability, and not dumping a trace when no config file exists.

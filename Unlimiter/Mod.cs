@@ -15,17 +15,20 @@ namespace TreeUnlimiter
 {
     public class Mod : IUserMod
     {
-        internal const int MOD_TREE_SCALE = 4;
         internal const ulong MOD_WORKSHOPID = 455403039uL;
         internal const string MOD_OFFICIAL_NAME = "Unlimited Trees Mod";
-        internal const string VERSION_BUILD_NUMBER = "1.0.2.1-f1 build_002";
+        internal const string VERSION_BUILD_NUMBER = "1.0.2.2-f3 build_002";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
         public static readonly string MOD_CONFIGPATH = "TreeUnlimiterConfig.xml";
         public static readonly string MOD_DEFAULT_LOG_PATH = "TreeUnlimiter_Log.txt";
+        public static int MOD_TREE_SCALE = 4;
         public const int DEFAULT_TREE_COUNT = 262144;
         public const int DEFAULT_TREEUPDATE_COUNT = 4096;
-        public const int OUR_TREEUPDATE_COUNT = 16384;
+        internal const int FormatVersion1NumOfTrees = 1048576;
+        internal const ushort CurrentFormatVersion = 3;
+        public static int SCALED_TREE_COUNT = MOD_TREE_SCALE * DEFAULT_TREE_COUNT; //1048576
+        public static int SCALED_TREEUPDATE_COUNT = MOD_TREE_SCALE * DEFAULT_TREEUPDATE_COUNT;//  16384;
         public static bool IsEnabled = false;
         public static bool IsInited = false;
         public static bool IsSetupActive = false;
@@ -85,7 +88,7 @@ namespace TreeUnlimiter
             if (!isFirstInit)
             {
                 ReloadConfiguationData(false, false); //always regrab\refresh our info on-enabled.
-                //EXCEPT when it's our very first time around where idfirstinit will be true.
+                //EXCEPT when it's our very first time around where isfirstinit will be true.
                 //handles case of user loading with enabled, then disabling, changing config txt manually, then re-enabling.
                 // ..edge case of course but why make them restart to pick up custom config change or pull from disk twice
                 //during our first load just to save a few bytes?
@@ -103,10 +106,10 @@ namespace TreeUnlimiter
                 if (IsInited == false)
                 {
                     ReloadConfiguationData(false,false);  //we should only need this if it's the first time around.
-                    PluginsChanged();  //Go find out if we're enabled first time before subscribing.
+                    //PluginsChanged();  //Go find out if we're enabled first time before subscribing.
                     IsInited = true;
-                    Singleton<PluginManager>.instance.eventPluginsChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
-                    Singleton<PluginManager>.instance.eventPluginsStateChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
+                    //Singleton<PluginManager>.instance.eventPluginsChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
+                    //Singleton<PluginManager>.instance.eventPluginsStateChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
                     if (DEBUG_LOG_ON) Logger.dbgLog("Mod has been initialized.");
                 }
             }
@@ -137,8 +140,8 @@ namespace TreeUnlimiter
             {
                 if (IsInited == true)
                 {
-                    Singleton<PluginManager>.instance.eventPluginsChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
-                    Singleton<PluginManager>.instance.eventPluginsStateChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
+                    //Singleton<PluginManager>.instance.eventPluginsChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
+                    //Singleton<PluginManager>.instance.eventPluginsStateChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
                     IsInited = false;
                     isFirstInit = true;
                     if (DEBUG_LOG_ON) Logger.dbgLog("Mod has been un-initialized.");
@@ -189,9 +192,14 @@ namespace TreeUnlimiter
                 }
                 if (config != null)
                 {
+                    Configuration.ValidateConfig(ref config);
                     DEBUG_LOG_ON = config.DebugLogging;
                     DEBUG_LOG_LEVEL = config.DebugLoggingLevel;
                     USE_NO_WINDEFFECTS = config.UseNoWindEffects;
+                    MOD_TREE_SCALE = config.ScaleFactor; 
+                    SCALED_TREE_COUNT = MOD_TREE_SCALE * DEFAULT_TREE_COUNT; //1048576
+                    SCALED_TREEUPDATE_COUNT = MOD_TREE_SCALE * DEFAULT_TREEUPDATE_COUNT;//  16384;
+
                 }
                 if (DEBUG_LOG_ON) { Logger.dbgLog("Configuration data loaded or refreshed."); }
             }
@@ -225,14 +233,19 @@ namespace TreeUnlimiter
         /// <param name="helper"></param>
         public void OnSettingsUI(UIHelperBase helper)
         {
-            //for setting up tooltips; let's subscribe to visibiliy event.
-            UIHelper hp = (UIHelper)helper;
-            UIScrollablePanel panel = (UIScrollablePanel)hp.self;
-            panel.eventVisibilityChanged += eventVisibilityChanged;
-            //regular
-            UIHelperBase uIHelperBase = helper.AddGroup("Unlimited Trees Options");
-            uIHelperBase.AddCheckbox("Disable tree effects on wind", Mod.USE_NO_WINDEFFECTS, new OnCheckChanged(UseNoWindChecked));
-            uIHelperBase.AddCheckbox("Enable Verbose Logging", Mod.DEBUG_LOG_ON, new OnCheckChanged(LoggingChecked));
+            try
+            {
+                //for setting up tooltips; let's subscribe to visibiliy event.
+                UIHelper hp = (UIHelper)helper;
+                UIScrollablePanel panel = (UIScrollablePanel)hp.self;
+                panel.eventVisibilityChanged += eventVisibilityChanged;
+                //regular
+                UIHelperBase uIHelperBase = helper.AddGroup("Unlimited Trees Options");
+                uIHelperBase.AddCheckbox("Disable tree effects on wind", Mod.USE_NO_WINDEFFECTS, new OnCheckChanged(UseNoWindChecked));
+                uIHelperBase.AddCheckbox("Enable Verbose Logging", Mod.DEBUG_LOG_ON, new OnCheckChanged(LoggingChecked));
+            }
+            catch (Exception ex)
+            { Logger.dbgLog("Exception setting options gui:",ex,true); }
         }
 
 
@@ -290,8 +303,7 @@ namespace TreeUnlimiter
             }
             catch (Exception ex)
             {
-                /* Doesn't really matter but let's log it anyway. */
-                Logger.dbgLog("", ex, true);
+                Logger.dbgLog("error populating tooltips", ex, true);
             }
 
             yield break; //equiv to return and don't reenter.
