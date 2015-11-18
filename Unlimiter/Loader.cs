@@ -72,6 +72,9 @@ namespace TreeUnlimiter
             if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Map LoadMode:" + mode.ToString()); }
             try
             {
+                //hide ability to change maxtrees.
+                if (Mod.maxTreeSlider != null) { Mod.maxTreeSlider.Disable();}
+
                 if (Mod.IsEnabled == true & Mod.IsSetupActive == false)
                 {
                     //should rarely, if ever, reach here as should be taken care of in onCreated().

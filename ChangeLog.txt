@@ -7,6 +7,12 @@ steam workshop update.
 
 **ChangeLog**
 -----------------------
+11-18-2015 -v1.2.2-f3_Build_003
+ + Added GUI option to change the max tree's scaling factor, option is disabled when
+   a level is loaded.
+
+
+
 11-13-2015 -v1.2.2-f3_Build_002 (beta)
 Summary: Major reworking of treedata save formate and serialize and deserialze processes.
  - removed Onplugin change related code finally, code still there in beta but it's dead code.
