@@ -7,6 +7,9 @@ steam workshop update.
 
 **ChangeLog**
 -----------------------
+1-5-2015 -v1.2.2-f3_build_004
+ + corrected OnRemoved() vs OnDisabled() bug.
+
 11-18-2015 -v1.2.2-f3_Build_003
  + Added GUI option to change the max tree's scaling factor, option is disabled when
    a level is loaded.

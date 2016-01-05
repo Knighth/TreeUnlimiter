@@ -17,7 +17,7 @@ namespace TreeUnlimiter
     {
         internal const ulong MOD_WORKSHOPID = 455403039uL;
         internal const string MOD_OFFICIAL_NAME = "Unlimited Trees Mod";
-        internal const string VERSION_BUILD_NUMBER = "1.0.2.2-f3 build_003";
+        internal const string VERSION_BUILD_NUMBER = "1.0.2.2-f3 build_004";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
         internal const string CURRENTMAXTREES_FORMATTEXT = "ScaleFactor: {0}   Maximum trees: {1}";
@@ -139,7 +139,7 @@ namespace TreeUnlimiter
         /// Fired when we are 'disabled' by the user and \ or when the game exits. 
         /// Note: the C\O call backs must not be static due to the way CO looks for them via reflection.
         /// </summary>
-        public void OnRemoved()
+        public void OnDisabled()
         {
             try
             {
