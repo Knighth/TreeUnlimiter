@@ -1,5 +1,5 @@
 ﻿# Unlimited Trees Mod
-A Cities:Skylines(v1.2.1) Mod to enable \ allow 1 million trees in a loaded game.
+A Cities:Skylines(v1.2.2) Mod to enable \ allow 1 million trees in a loaded game.
 
 This mod increases the default limit of 262,144 trees to 1,048,571 in a loaded\new game.
 Lastest version allows the new limits to be used in the Map Editor as well.
@@ -9,7 +9,7 @@ builds makes an attempt to resolve those issues. If you run into problems
 you should disable the mod (turn it off) from the content manager and reload the asset editor.
 (a reload of the game itself should not be needed if using the latest build)
 
-Compatible with the After Dark DLC patch\update (version 1.2.1) of the game.
+Compatible with the After Dark DLC patch\update (version 1.2.1+) of the game.
 
 Special thanks to:
 

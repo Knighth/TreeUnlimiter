@@ -65,6 +65,8 @@ namespace TreeUnlimiter
             {
                 Debug.Log(string.Concat("[TreeUnlimiter.Logger.dbgLog()] Error in log attempt!  ", Exp.Message.ToString()));
             }
+            logSB.Length = 0;
+            if (logSB.Capacity > 4096) { logSB.Capacity = 4096;}
         }
     }
 

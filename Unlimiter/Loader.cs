@@ -6,6 +6,7 @@ using ColossalFramework.Threading;
 using ColossalFramework.Steamworks;
 using ICities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -16,8 +17,9 @@ namespace TreeUnlimiter
 {
     public class Loader : LoadingExtensionBase
     {
-
-        public Loader() { }
+        internal static bool LastSaveUsedPacking = false;
+        internal static List<int> LastSaveList;
+        public Loader() {}
         public override void OnCreated(ILoading loading)
         {
 
@@ -66,9 +68,13 @@ namespace TreeUnlimiter
 
         public override void OnLevelLoaded(LoadMode mode)
         {
+            LastSaveUsedPacking = false;
             if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Map LoadMode:" + mode.ToString()); }
             try
             {
+                //hide ability to change maxtrees.
+                if (Mod.maxTreeSlider != null) { Mod.maxTreeSlider.Disable();}
+
                 if (Mod.IsEnabled == true & Mod.IsSetupActive == false)
                 {
                     //should rarely, if ever, reach here as should be taken care of in onCreated().
@@ -158,6 +164,8 @@ namespace TreeUnlimiter
                 {
                     if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnLevelUnloading()"); }
                     ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT);  //rebuild to org values seems to solve problem of mapeditor retaining prior map trees.
+                    if (LastSaveList != null)
+                    { LastSaveList.Clear(); LastSaveList.Capacity = 1; LastSaveList = null; }
                 }
             }
             catch (Exception ex)
@@ -191,7 +199,7 @@ namespace TreeUnlimiter
                 Singleton<TreeManager>.instance.m_trees = new Array32<TreeInstance>((uint)tsize);
                 Singleton<TreeManager>.instance.m_updatedTrees = new ulong[updatesize];
                 Singleton<TreeManager>.instance.m_trees.CreateItem(out num);
-                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter:Loader::ResetTreeManager] completed; forced=" + bforce.ToString()); }
+                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("ResetTreeManager completed; forced=" + bforce.ToString()); }
             }
         }
     }

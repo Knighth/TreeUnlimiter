@@ -209,6 +209,7 @@ namespace TreeUnlimiter
                                     {
                                         continue;
                                     }
+                                    Logger.dbgLog(string.Format("mTreeGrid = {0}  num2= {1}  limit= {2}", mTreeGrid.ToString(), num2, LimitTreeManager.Helper.TreeLimit.ToString()));
                                     CODebugBase<LogChannel>.Error(LogChannel.Core, string.Concat("Invalid list detected!\n", Environment.StackTrace));
                                     break;
                                 }
@@ -739,55 +740,157 @@ namespace TreeUnlimiter
                     Buffer.BlockCopy(numArray, 0, numArray1, 0, (int)numArray.Length);
                     uint num = 0;
                     uint num1 = num;
-                    num = num1 + 1;
-                    ushort num2 = numArray1[num1];
-                    if (num2 != 1)
+                    ushort versionnum = numArray1[num1];
+                    if (versionnum != 1 & versionnum != 2 & versionnum !=3)
                     {
-                        object[] objArray = new object[] { numArray1[0], num2, numArray[0], numArray[1] };
+                        object[] objArray = new object[] { numArray1[0], versionnum, numArray[0], numArray[1] };
                         Logger.dbgLog(string.Format(" Wrong version ({0}|{1}|{2},{3}).", objArray));
                         return false;
                     }
-                    int num3 = 0;
-                    for (int i = 262144; i < LimitTreeManager.Helper.TreeLimit; i++) //start at the top thier limit.
+                    int numStoredTrees = 0;
+                    int headerTreeCount = 0;
+                    ushort fileflags = 0;
+
+                    if (versionnum == 1)
                     {
-                        uint num4 = num;
-                        try
-                        {
-                            uint num5 = num;
-                            num = num5 + 1;
-                            mBuffer[i].m_flags = numArray1[num5];
-                            if (mBuffer[i].m_flags != 0)
-                            {
-                                uint num6 = num;
-                                num = num6 + 1;
-                                mBuffer[i].m_infoIndex = numArray1[num6];
-                                uint num7 = num;
-                                num = num7 + 1;
-                                mBuffer[i].m_posX = (short)numArray1[num7];
-                                //mBuffer[i].m_posY = 0; // we do later for entire instead of here.
-                                uint num8 = num;
-                                num = num8 + 1;
-                                mBuffer[i].m_posZ = (short)numArray1[num8];
-                                num3++;
-                            }
-                            if ((ulong)num == (ulong)((int)numArray1.Length))
-                            {
-                                break;
-                            }
+                        num = num1 + 1; //adjust for version header.
+
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("save format - version 1 detected."); }
+                        numStoredTrees = Mod.FormatVersion1NumOfTrees;
+                    }
+                    //handles new version where we've stored the number of stored trees in the save.
+                    if(versionnum > 1)
+                    {
+                        num = num1 + 3; //adjust for version header + saved array size(v2).
+                        if (versionnum == 3)
+                        { num = num1 + 10; } //adjust for version+full_v3_header
+
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Format("save format - version {0} detected.",versionnum.ToString())); }
+
+                        numStoredTrees = (numArray1[1] << 16) | (numArray1[2] & 0xffff);
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("stored array count = " + numStoredTrees.ToString()); }
+                        if (numStoredTrees <= 0 | numStoredTrees > 2097152)
+                        { 
+                            Logger.dbgLog(" *Warning* - Aborting deserialize; storedTreeArray <= 0 or > 2097152");
+                            return false;
                         }
-                        catch (Exception exception1)
+                        if (numStoredTrees > LimitTreeManager.Helper.TreeLimit)
                         {
-                            Exception exception = exception1;
-                            object[] objArray1 = new object[] { i, num4, (int)numArray1.Length };
-                            Logger.dbgLog(string.Format("Error - While fetching tree {0} in pos {1} of {2}", objArray1),exception1,true);
-                            throw exception;
+                            Logger.dbgLog(string.Format("** WARNING ** Number of trees in file is greater then scaled value, we will only load as many trees ({0}) as will fit in currently scaled limit of {1}.",
+                                numStoredTrees.ToString(),LimitTreeManager.Helper.TreeLimit.ToString()));
+
+                            numStoredTrees = LimitTreeManager.Helper.TreeLimit;
+                        }
+                        //get treecount from header in v3+
+                        if (versionnum > 2) 
+                        { 
+                            headerTreeCount = (numArray1[3] << 16) | (numArray1[4] & 0xffff);
+                            fileflags = numArray1[9];
+                            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("stored treecount = " + headerTreeCount.ToString()); }
                         }
                     }
-                    object[] treeLimit1 = new object[] { num3, LimitTreeManager.Helper.TreeLimit - Mod.DEFAULT_TREE_COUNT  };
-                    Logger.dbgLog(string.Format(" Loaded {0} trees (out of {1} possible in extra range)", treeLimit1));
+
+                    int num3 = 0; //holds our number of processed trees
+                    bool flgPacked = false;
+                    if ((fileflags & (ushort)Helper.SaveFlags.packed) != (ushort)Helper.SaveFlags.packed)
+                    {
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Stored data is not packed. reading " + (numStoredTrees - Mod.DEFAULT_TREE_COUNT ).ToString() + " number of objects"); }
+                        for (int i = 262144; i < numStoredTrees; i++) //start at the top thier limit.
+                        {
+                            uint num4 = num;
+                            try
+                            {
+                                uint num5 = num;
+                                num = num5 + 1;
+                                mBuffer[i].m_flags = numArray1[num5];
+                                if (mBuffer[i].m_flags != 0)
+                                {
+                                    uint num6 = num;
+                                    num = num6 + 1;
+                                    mBuffer[i].m_infoIndex = numArray1[num6];
+                                    uint num7 = num;
+                                    num = num7 + 1;
+                                    mBuffer[i].m_posX = (short)numArray1[num7];
+                                    //mBuffer[i].m_posY = 0; // we do later for entire buffer instead of here.
+                                    uint num8 = num;
+                                    num = num8 + 1;
+                                    mBuffer[i].m_posZ = (short)numArray1[num8];
+                                    num3++;
+                                }
+                                if ((ulong)num == (ulong)((int)numArray1.Length))
+                                {
+                                    break;
+                                }
+                            }
+                            catch (Exception exception1)
+                            {
+                                Exception exception = exception1;
+                                object[] objArray1 = new object[] { i, num4, (int)numArray1.Length };
+                                Logger.dbgLog(string.Format("Error - While fetching tree {0} in pos {1} of {2}", objArray1), exception1, true);
+                                throw exception;
+                            }
+                        }
+                    }
+                    else //packed version.
+                    {
+                        flgPacked = true;
+                        if (Mod.DEBUG_LOG_ON)
+                        { Logger.dbgLog("Stored data is packed. reading " + headerTreeCount.ToString() + " number of objects"); }
+                        if (headerTreeCount > (Helper.TreeLimit - Mod.DEFAULT_TREE_COUNT))
+                        {
+                            headerTreeCount = (Helper.TreeLimit - Mod.DEFAULT_TREE_COUNT);
+                            Logger.dbgLog(string.Format("**Warning** Stored treecount is greater then exisiting scaled arraysize, will only load {0} number of trees", headerTreeCount.ToString()));  
+                        }
+                        int i = Mod.DEFAULT_TREE_COUNT;  //start adding at location 262144.
+                        int j = 0;
+                        for (j = 0; j < headerTreeCount ; j++) //use our stored treecount limit.
+                        {
+                            uint num4 = num; //for error logging
+                            try
+                            {
+                                uint num5 = num; //store current array index.
+                                num = num5 + 1; //bump master arrayindex tracker.
+                                mBuffer[i].m_flags = numArray1[num5];
+                                if (mBuffer[i].m_flags != 0)
+                                {
+                                    uint num6 = num; //store current master.
+                                    num = num6 + 1; //bumper master up 
+                                    mBuffer[i].m_infoIndex = numArray1[num6];
+                                    uint num7 = num; //store current master.
+                                    num = num7 + 1; //bump master up. 
+                                    mBuffer[i].m_posX = (short)numArray1[num7];
+                                    //mBuffer[i].m_posY = 0; // we do later for entire buffer instead of here.
+                                    uint num8 = num; //store current master
+                                    num = num8 + 1;  //bump master
+                                    mBuffer[i].m_posZ = (short)numArray1[num8];
+                                    num3++;  //data tracker
+                                }
+                                //needed cause we 'for' on j, might as well stop if we're at the limit of the array.
+                                if ((ulong)num == (ulong)((int)numArray1.Length))
+                                {
+                                    break;
+                                }
+                                i++;  //increment our treemanager buffer index.
+                            }
+                            catch (Exception exception1)
+                            {
+                                Exception exception = exception1;
+                                object[] objArray1 = new object[] { i.ToString(), num4.ToString(), (int)numArray1.Length,j.ToString() };
+                                Logger.dbgLog(string.Format("Error - While fetching packed tree i={0} j={4} in array pos {1} of {2}", objArray1), exception1, true);
+                                throw exception;
+                            }
+                        }
+                    }
+                    object[] treeLimit1;
+                    if (!flgPacked)
+                    { treeLimit1 = new object[] { num3, (numStoredTrees - Mod.DEFAULT_TREE_COUNT),(numStoredTrees - Mod.DEFAULT_TREE_COUNT) }; }
+                    else
+                    { treeLimit1 = new object[] { num3, headerTreeCount ,(numStoredTrees - Mod.DEFAULT_TREE_COUNT) }; }
+                    Logger.dbgLog(string.Format(" Loaded {0} trees of {1} (out of {2} possible in extra range)", treeLimit1));
                     return true;
                 }
             }
+
 
             internal static void Serialize()
             {
@@ -801,30 +904,87 @@ namespace TreeUnlimiter
                  * are still active... this will bomb out with an exception...it will not do damage persay but
                  * why not just prevent it and let the game save the first 262144.
                  */
-
+                
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Concat(" treelimit = ", LimitTreeManager.Helper.TreeLimit.ToString() , " buffersize=" , Singleton<TreeManager>.instance.m_trees.m_size.ToString())); }
 
                 TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
-                List<ushort> nums = new List<ushort>()
+                if (Loader.LastSaveList == null)
                 {
-                    1   //this is our internal save format version number
-                };
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Obtaining fresh PackedList"); }
+                    Loader.LastSaveList = Packer.GetPackedList();
+                }
+                if (mBuffer.Length <= Mod.DEFAULT_TREE_COUNT || Loader.LastSaveList.Count <= Mod.DEFAULT_TREE_COUNT)
+                { 
+                    Logger.dbgLog("No extra tree data to save."); 
+                    Loader.LastSaveUsedPacking = false;
+                    return; 
+                }
+                Loader.LastSaveUsedPacking = true;
+
+                List<ushort> nums = new List<ushort>();
+                nums.Add(Mod.CurrentFormatVersion); //this is our internal save format version #
+                
+                //now add our present 32bit array size as 2 ushorts.
+                uint orgint = (uint)LimitTreeManager.Helper.TreeLimit;
+                ushort firsthalf = (ushort) (orgint >> 16); //right shift 16
+                ushort secondhalf = (ushort)(orgint & 0xffff); //and 16bits  
+                // now store them in entries 1 and 2.
+                nums.Add(firsthalf);    //int32-1 arraysize at time of save.
+                nums.Add(secondhalf);   //get these back later by (first <<16) | (second & 0xffff) 
+                nums.Add(0);   //int32-2 actual treecount 
+                nums.Add(0);   //int32-2 actual treecount
+                nums.Add(0);    //int32-3 reserved for future use.
+                nums.Add(0);   //int32-3 reserved for future use.
+                nums.Add(0);    //int32-3 reserved for future use.
+                nums.Add(0);   //int32-3 reserved for future use.
+                nums.Add(0);   //ushort Flags reserved for furture use. 
 
                 int num = 0;
-                for (int i = 262144; i < LimitTreeManager.Helper.TreeLimit; i++) //from top of there range to ours.
+
+                
+                //orignal
+                if (Loader.LastSaveUsedPacking == false | Loader.LastSaveList == null)
                 {
-                    TreeInstance treeInstance = mBuffer[i];
-                    nums.Add(treeInstance.m_flags);
-                    if (treeInstance.m_flags != 0)
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer.(no packing)"); }
+
+                    for (int i = Mod.DEFAULT_TREE_COUNT; i < LimitTreeManager.Helper.TreeLimit; i++) //from top of there range to ours.
                     {
-                        nums.Add(treeInstance.m_infoIndex);
-                        nums.Add((ushort)treeInstance.m_posX);
-                        nums.Add((ushort)treeInstance.m_posZ);
-                        num++;
+                        TreeInstance treeInstance = mBuffer[i];
+                        nums.Add(treeInstance.m_flags);
+                        if (treeInstance.m_flags != 0)
+                        {
+                            nums.Add(treeInstance.m_infoIndex);
+                            nums.Add((ushort)treeInstance.m_posX);
+                            nums.Add((ushort)treeInstance.m_posZ);
+                            num++;
+                        }
                     }
                 }
-                object[] treeLimit = new object[] { num, LimitTreeManager.Helper.TreeLimit - Mod.DEFAULT_TREE_COUNT , nums.Count * 2 };
-                Logger.dbgLog(string.Format("Saving {0} of {1} in extra trees range, size in savegame approx: {2} bytes", treeLimit));
+                else //use packing
+                {
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer.(packing)"); }
+
+                    for (int i = Mod.DEFAULT_TREE_COUNT; i < Loader.LastSaveList.Count; i++) //from top of there range to ours.
+                    {
+                        TreeInstance treeInstance = mBuffer[Loader.LastSaveList[i]];
+                        nums.Add(treeInstance.m_flags);
+                        if (treeInstance.m_flags != 0)
+                        {
+                            nums.Add(treeInstance.m_infoIndex);
+                            nums.Add((ushort)treeInstance.m_posX);
+                            nums.Add((ushort)treeInstance.m_posZ);
+                            num++;
+                        }
+                    }
+                }
+                //save actual tree count to header.
+                nums[3] = (ushort)(num >> 16);
+                nums[4] = (ushort)(num & 0xffff);
+                nums[9] = 0; //options
+                if (Loader.LastSaveUsedPacking) //add packed flag.
+                { nums[9] = (ushort)(nums[9] | (ushort)Helper.SaveFlags.packed); }
+                object[] treeLimit = new object[] { num, LimitTreeManager.Helper.TreeLimit - Mod.DEFAULT_TREE_COUNT, nums.Count * 2, Mod.CurrentFormatVersion.ToString() };
+                Logger.dbgLog(string.Format("Saving {0} of {1} in extra trees range, size in savegame approx: {2} bytes, saveformatverion:{3}", treeLimit));
                 Singleton<SimulationManager>.instance.m_serializableDataStorage["mabako/unlimiter"] = nums.SelectMany<ushort, byte>((ushort v) => BitConverter.GetBytes(v)).ToArray<byte>();
             }
         }
@@ -927,9 +1087,17 @@ namespace TreeUnlimiter
             private static void Serialize(TreeManager.Data data, DataSerializer s)
             {
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginSerialize(s, "TreeManager");
-                TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
-                int num = Mod.DEFAULT_TREE_COUNT ; //262144
-
+                //orig TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
+                
+                //orig int num = Mod.DEFAULT_TREE_COUNT ; //262144
+                try
+                {
+                    Packer.Serialize(ref Loader.LastSaveList, ref s);
+                }
+                catch (Exception ex)
+                { Logger.dbgLog("", ex, true); }
+                //original
+                /*
                 EncodedArray.UShort num1 = EncodedArray.UShort.BeginWrite(s);
                 for (int i = 1; i < num; i++)
                 {
@@ -969,13 +1137,29 @@ namespace TreeUnlimiter
                     }
                 }
                 num3.EndWrite();
+                */ 
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("replaced seralizer completed."); }
+                if (Loader.LastSaveList != null)
+                {
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Cleaning up last save flags and list object."); }
+                    Loader.LastSaveList.Clear();
+                    Loader.LastSaveUsedPacking = false;
+                    Loader.LastSaveList = null;
+                }
+
             }
         }
 
 
         internal static class Helper
         {
+            [Flags]
+            internal enum SaveFlags :ushort
+            {
+                none = 0,
+                packed = 1,
+            }
             internal static int TreeLimit
             {
                 get
@@ -984,7 +1168,8 @@ namespace TreeUnlimiter
                     {
                         return Mod.DEFAULT_TREE_COUNT ; // 262144
                     }
-                    return 1048576;  //1048576
+                    return Mod.SCALED_TREE_COUNT;
+                    //return 1048576;  //1048576
                 }
             }
 
@@ -1046,7 +1231,7 @@ namespace TreeUnlimiter
                
         //9-25-2015 if (Mod.DEBUG_LOG_ON) {Debug.LogFormat(string.Concat("[TreeUnlimiter::EnsureInit({2})] LastLoadmode=", Mod.LastMode.ToString()), objArray); }
                     Singleton<TreeManager>.instance.m_trees = new Array32<TreeInstance>((uint)LimitTreeManager.Helper.TreeLimit); 
-                    Singleton<TreeManager>.instance.m_updatedTrees = new ulong[Mod.OUR_TREEUPDATE_COUNT]; //16384
+                    Singleton<TreeManager>.instance.m_updatedTrees = new ulong[Mod.SCALED_TREEUPDATE_COUNT]; //16384
                     Singleton<TreeManager>.instance.m_trees.CreateItem(out num);
                 }
             }

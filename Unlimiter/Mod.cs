@@ -15,17 +15,21 @@ namespace TreeUnlimiter
 {
     public class Mod : IUserMod
     {
-        internal const int MOD_TREE_SCALE = 4;
         internal const ulong MOD_WORKSHOPID = 455403039uL;
         internal const string MOD_OFFICIAL_NAME = "Unlimited Trees Mod";
-        internal const string VERSION_BUILD_NUMBER = "1.0.2.1-f1 build_002";
+        internal const string VERSION_BUILD_NUMBER = "1.0.2.2-f3 build_004";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
+        internal const string CURRENTMAXTREES_FORMATTEXT = "ScaleFactor: {0}   Maximum trees: {1}";
         public static readonly string MOD_CONFIGPATH = "TreeUnlimiterConfig.xml";
         public static readonly string MOD_DEFAULT_LOG_PATH = "TreeUnlimiter_Log.txt";
+        public static int MOD_TREE_SCALE = 4;
         public const int DEFAULT_TREE_COUNT = 262144;
         public const int DEFAULT_TREEUPDATE_COUNT = 4096;
-        public const int OUR_TREEUPDATE_COUNT = 16384;
+        internal const int FormatVersion1NumOfTrees = 1048576;
+        internal const ushort CurrentFormatVersion = 3;
+        public static int SCALED_TREE_COUNT = MOD_TREE_SCALE * DEFAULT_TREE_COUNT; //1048576
+        public static int SCALED_TREEUPDATE_COUNT = MOD_TREE_SCALE * DEFAULT_TREEUPDATE_COUNT;//  16384;
         public static bool IsEnabled = false;
         public static bool IsInited = false;
         public static bool IsSetupActive = false;
@@ -33,9 +37,10 @@ namespace TreeUnlimiter
         public static byte DEBUG_LOG_LEVEL = 0;
         public static bool USE_NO_WINDEFFECTS = false;
         private static bool isFirstInit = true;
-        //9-25-2015--notneeded    public static SimulationManager.UpdateMode LastMode = SimulationManager.UpdateMode.Undefined;
         private static Dictionary<MethodInfo, RedirectCallsState> redirectDic = new Dictionary<MethodInfo, RedirectCallsState>();
         public static Configuration config;
+        private static UILabel maxTreeLabel; //stores ref to last generated option panel uilabel for maxtrees#.
+        internal static UISlider maxTreeSlider; //stores ref to laste generated option panel slider for treescale setting.
 
 
         public string Name
@@ -59,11 +64,18 @@ namespace TreeUnlimiter
         /// </summary>
         public Mod()
         {
-            if (!Mod.IsInited)
+            try
             {
-                //we hard code this one, assuming there is a problem with our own logger just so we know we're loaded.
-                Debug.Log("[TreeUnlimiter] v" + VERSION_BUILD_NUMBER + " Mod has been loaded."); 
-                Mod.init();
+                if (!Mod.IsInited)
+                {
+                    //we hard code this one to output_log so there is no confusion in a startup log that may be passed along for debugging.
+                    Debug.Log("[TreeUnlimiter] v" + VERSION_BUILD_NUMBER + " Mod has been loaded.");
+                    Mod.init();
+                }
+            }
+            catch(Exception ex)
+            {
+                Debug.Log("[TreeUnlimiter] v" + VERSION_BUILD_NUMBER + " ,Error in construction\nPlease report this to mod author, thank you.\r\n" + ex.ToString());
             }
         }
 
@@ -76,25 +88,31 @@ namespace TreeUnlimiter
         /// </summary>
         public void OnEnabled()
         {
-            IsEnabled = true;
-            Logger.dbgLog(string.Concat("v", VERSION_BUILD_NUMBER, " Mod has been enabled. ",DateTime.Now.ToString()));
-            if (IsInited == false)
+            try
             {
-                init();  //init will do a data pull from config off disk
+                IsEnabled = true;
+                Logger.dbgLog(string.Concat("v", VERSION_BUILD_NUMBER, " Mod has been enabled. ", DateTime.Now.ToString()));
+                if (IsInited == false)
+                {
+                    init();  //init will do a data pull from config off disk
+                }
+                if (!isFirstInit)
+                {
+                    ReloadConfiguationData(false, false); //always regrab\refresh our info on-enabled.
+                    //EXCEPT when it's our very first time around where isfirstinit will be true.
+                    //handles case of user loading with enabled, then disabling, changing config txt manually, then re-enabling.
+                    // ..edge case of course but why make them restart to pick up custom config change or pull from disk twice
+                    //during our first load just to save a few bytes?
+                }
+                else
+                {
+                    isFirstInit = false; // our very first load flag 
+                }
             }
-            if (!isFirstInit)
-            {
-                ReloadConfiguationData(false, false); //always regrab\refresh our info on-enabled.
-                //EXCEPT when it's our very first time around where idfirstinit will be true.
-                //handles case of user loading with enabled, then disabling, changing config txt manually, then re-enabling.
-                // ..edge case of course but why make them restart to pick up custom config change or pull from disk twice
-                //during our first load just to save a few bytes?
-            }
-            else
-            {
-                isFirstInit = false; // our very first load flag 
-            }
+            catch(Exception ex)
+            { Logger.dbgLog("", ex, true); }
         }
+
 
         public static void init()
         {
@@ -103,10 +121,10 @@ namespace TreeUnlimiter
                 if (IsInited == false)
                 {
                     ReloadConfiguationData(false,false);  //we should only need this if it's the first time around.
-                    PluginsChanged();  //Go find out if we're enabled first time before subscribing.
+                    //PluginsChanged();  //Go find out if we're enabled first time before subscribing.
                     IsInited = true;
-                    Singleton<PluginManager>.instance.eventPluginsChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
-                    Singleton<PluginManager>.instance.eventPluginsStateChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
+                    //Singleton<PluginManager>.instance.eventPluginsChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
+                    //Singleton<PluginManager>.instance.eventPluginsStateChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
                     if (DEBUG_LOG_ON) Logger.dbgLog("Mod has been initialized.");
                 }
             }
@@ -121,14 +139,19 @@ namespace TreeUnlimiter
         /// Fired when we are 'disabled' by the user and \ or when the game exits. 
         /// Note: the C\O call backs must not be static due to the way CO looks for them via reflection.
         /// </summary>
-        public void OnRemoved()
+        public void OnDisabled()
         {
-            IsEnabled = false;
-            if (IsInited)
+            try
             {
-                un_init();
-                Logger.dbgLog(string.Concat("v", VERSION_BUILD_NUMBER, " Mod has been unloaded, disabled or game exiting."));
+                IsEnabled = false;
+                if (IsInited)
+                {
+                    un_init();
+                    Logger.dbgLog(string.Concat("v", VERSION_BUILD_NUMBER, " Mod has been unloaded, disabled or game exiting."));
+                }
             }
+            catch (Exception ex)
+            { Logger.dbgLog("", ex, true); }
         }
 
         public static void un_init()
@@ -137,8 +160,8 @@ namespace TreeUnlimiter
             {
                 if (IsInited == true)
                 {
-                    Singleton<PluginManager>.instance.eventPluginsChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
-                    Singleton<PluginManager>.instance.eventPluginsStateChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
+                    //Singleton<PluginManager>.instance.eventPluginsChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
+                    //Singleton<PluginManager>.instance.eventPluginsStateChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
                     IsInited = false;
                     isFirstInit = true;
                     if (DEBUG_LOG_ON) Logger.dbgLog("Mod has been un-initialized.");
@@ -189,9 +212,11 @@ namespace TreeUnlimiter
                 }
                 if (config != null)
                 {
+                    Configuration.ValidateConfig(ref config);
                     DEBUG_LOG_ON = config.DebugLogging;
                     DEBUG_LOG_LEVEL = config.DebugLoggingLevel;
                     USE_NO_WINDEFFECTS = config.UseNoWindEffects;
+                    UpdateScaleFactors();
                 }
                 if (DEBUG_LOG_ON) { Logger.dbgLog("Configuration data loaded or refreshed."); }
             }
@@ -202,6 +227,12 @@ namespace TreeUnlimiter
 
         }
 
+        private static void UpdateScaleFactors()
+        {
+            MOD_TREE_SCALE = config.ScaleFactor;
+            SCALED_TREE_COUNT = MOD_TREE_SCALE * DEFAULT_TREE_COUNT; //1048576
+            SCALED_TREEUPDATE_COUNT = MOD_TREE_SCALE * DEFAULT_TREEUPDATE_COUNT;//  16384;
+        }
 
         private void LoggingChecked(bool en)
         {
@@ -217,6 +248,17 @@ namespace TreeUnlimiter
             Configuration.Serialize(MOD_CONFIGPATH, Mod.config);
         }
 
+        private void OnScaleFactorChange(float val)
+        {
+            config.ScaleFactor = (int)val;
+            Configuration.Serialize(MOD_CONFIGPATH, Mod.config);
+            UpdateScaleFactors();
+            if (maxTreeLabel != null) 
+            {
+                maxTreeLabel.text = string.Format(CURRENTMAXTREES_FORMATTEXT, config.ScaleFactor.ToString(), SCALED_TREE_COUNT.ToString());
+            }
+        }
+
 
         /// <summary>
         /// Called by game upon user entering options screen.
@@ -225,14 +267,41 @@ namespace TreeUnlimiter
         /// <param name="helper"></param>
         public void OnSettingsUI(UIHelperBase helper)
         {
-            //for setting up tooltips; let's subscribe to visibiliy event.
-            UIHelper hp = (UIHelper)helper;
-            UIScrollablePanel panel = (UIScrollablePanel)hp.self;
-            panel.eventVisibilityChanged += eventVisibilityChanged;
-            //regular
-            UIHelperBase uIHelperBase = helper.AddGroup("Unlimited Trees Options");
-            uIHelperBase.AddCheckbox("Disable tree effects on wind", Mod.USE_NO_WINDEFFECTS, new OnCheckChanged(UseNoWindChecked));
-            uIHelperBase.AddCheckbox("Enable Verbose Logging", Mod.DEBUG_LOG_ON, new OnCheckChanged(LoggingChecked));
+            try
+            {
+                //for setting up tooltips; let's subscribe to visibiliy event.
+                UIHelper hp = (UIHelper)helper;
+                UIScrollablePanel panel = (UIScrollablePanel)hp.self;
+                panel.eventVisibilityChanged += eventVisibilityChanged;
+                //regular
+                UIHelperBase uIHelperBase = helper.AddGroup("Unlimited Trees Options");
+                uIHelperBase.AddCheckbox("Disable tree effects on wind", Mod.USE_NO_WINDEFFECTS, new OnCheckChanged(UseNoWindChecked));
+                uIHelperBase.AddCheckbox("Enable Verbose Logging", Mod.DEBUG_LOG_ON, new OnCheckChanged(LoggingChecked));
+
+                GenerateMaxTreeSliderandLablel(ref uIHelperBase,ref panel);
+
+            }
+            catch (Exception ex)
+            { Logger.dbgLog("Exception setting options gui:",ex,true); }
+        }
+
+        private void GenerateMaxTreeSliderandLablel(ref UIHelperBase oUIHelperBase, ref UIScrollablePanel oPanel)
+        {
+            if (oUIHelperBase != null && oPanel !=null)
+            {
+                oUIHelperBase.AddSlider("Max # of trees scaling factor", 4.0f, 8.0f, 1.0f, (float)config.ScaleFactor, OnScaleFactorChange);
+                oUIHelperBase.AddSpace(50);
+                UISlider sld = oPanel.Find<UISlider>("Slider");
+                if (sld != null)
+                {
+                    maxTreeSlider = sld;  //store so onlevelloaded can hide it.
+                    oPanel.autoLayout = false;
+                    maxTreeLabel = oPanel.AddUIComponent<UILabel>();
+                    maxTreeLabel.name = "CurrentMaxTrees";
+                    maxTreeLabel.absolutePosition = new Vector3(sld.absolutePosition.x, sld.absolutePosition.y + 28f);
+                    maxTreeLabel.text = string.Format(CURRENTMAXTREES_FORMATTEXT, config.ScaleFactor.ToString(), SCALED_TREE_COUNT.ToString());
+                }
+            }
         }
 
 
@@ -259,7 +328,8 @@ namespace TreeUnlimiter
         /// or as in this cases a helpfull way of of saying...hey wait till xyz no matter how
         /// many frames have passed then start doing this on whatever frame is active at that point in time.
         /// saves you from having to implement your own time tracking\frame counting system.
-        /// Unless you actually want something off-thread in which case the approach would be different and more complex.
+        /// I'm using this delay because some UI items take a few ms to initialize before acting or reporting
+        /// there values correctly.
         /// </summary>
         /// <param name="hlpComponent">The UIComponent that was triggered.</param>
         /// <returns></returns>
@@ -286,18 +356,23 @@ namespace TreeUnlimiter
                         }
                     }
                 }
+                UISlider sld = hlpComponent.GetComponentInChildren<UISlider>();
+                if (sld != null)
+                {
+                    sld.tooltip = "Sets the maximum # of trees in increments of 262,144.\nSetting this above 4 (1 million trees) is not recommended and depending on your hardware\n it may cause performance or rendering issues.";
+                }
+
 
             }
             catch (Exception ex)
             {
-                /* Doesn't really matter but let's log it anyway. */
-                Logger.dbgLog("", ex, true);
+                Logger.dbgLog("error populating tooltips", ex, true);
             }
 
             yield break; //equiv to return and don't reenter.
         }
 
-
+//TODO:  Dead code - Remove this code in next release.
         /// <summary>
         /// Fired when user enables\disables mod, subscribes\unsubscribes, or after each plugin actually gets loaded.
         /// The only reason we track this is really because maybe some other mod upon loading might want to disable us.
@@ -361,6 +436,7 @@ namespace TreeUnlimiter
                 Logger.dbgLog("PluginChanged exception:", ex1, true);
             }
         }
+//End Dead Code
 
 
         /// <summary>
