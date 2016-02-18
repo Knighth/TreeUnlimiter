@@ -17,10 +17,12 @@ namespace TreeUnlimiter
     {
         internal const ulong MOD_WORKSHOPID = 455403039uL;
         internal const string MOD_OFFICIAL_NAME = "Unlimited Trees Mod";
-        internal const string VERSION_BUILD_NUMBER = "1.0.2.2-f3 build_004";
+        internal const string VERSION_BUILD_NUMBER = "1.0.3.0-f4 build_001";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
         internal const string CURRENTMAXTREES_FORMATTEXT = "ScaleFactor: {0}   Maximum trees: {1}";
+        public const int MAX_NET_SEGMENTS = 36864; //used in BuildingDecorations
+        public const int MAX_NET_NODES = 32768;  //used in BuildingDecorations
         public static readonly string MOD_CONFIGPATH = "TreeUnlimiterConfig.xml";
         public static readonly string MOD_DEFAULT_LOG_PATH = "TreeUnlimiter_Log.txt";
         public static int MOD_TREE_SCALE = 4;
@@ -479,7 +481,7 @@ namespace TreeUnlimiter
                     RedirectCalls(typeof(TreeManager), typeof(LimitTreeManager), methodInfo.Name);
                 }
                 //If windoverride enabled, otherwise don't.
-                if (USE_NO_WINDEFFECTS){RedirectCalls(typeof(WindManager), typeof(LimitWindManager), "CalculateSelfHeight");}
+                if (USE_NO_WINDEFFECTS){RedirectCalls(typeof(WeatherManager), typeof(LimitWeatherManager), "CalculateSelfHeight");}
 
                 IsSetupActive = true;
                 if (DEBUG_LOG_ON) { Logger.dbgLog("Redirected calls."); }

@@ -91,7 +91,8 @@ namespace TreeUnlimiter
                                     Quad2 quad21 = quad23;
                                     float single12 = value1.y - 1000f;
                                     float single13 = value1.y + mSize;
-                                    if (!Singleton<PropManager>.instance.OverlapQuad(quad2, single12, single13, 0, 0) && !Singleton<TreeManager>.instance.OverlapQuad(quad21, single12, single13, 0, 0) && !Singleton<NetManager>.instance.OverlapQuad(quad2, single12, single13, treeInfo1.m_class.m_layer, 0, 0, 0) && !Singleton<BuildingManager>.instance.OverlapQuad(quad2, single12, single13, treeInfo1.m_class.m_layer, 0, 0, 0) && !Singleton<TerrainManager>.instance.HasWater(vector2) && !Singleton<GameAreaManager>.instance.QuadOutOfArea(quad2) && !Singleton<TreeManager>.instance.CreateTree(out num, ref value, treeInfo1, vector3, false))
+                                    ItemClass.CollisionType collisionType = ItemClass.CollisionType.Terrain;
+                                    if (!Singleton<PropManager>.instance.OverlapQuad(quad2, single12, single13, collisionType, 0, 0) && !Singleton<TreeManager>.instance.OverlapQuad(quad21, single12, single13, collisionType, 0, 0) && !Singleton<NetManager>.instance.OverlapQuad(quad2, single12, single13, collisionType, treeInfo1.m_class.m_layer, 0, 0, 0) && !Singleton<BuildingManager>.instance.OverlapQuad(quad2, single12, single13, collisionType, treeInfo1.m_class.m_layer, 0, 0, 0) && !Singleton<TerrainManager>.instance.HasWater(vector2) && !Singleton<GameAreaManager>.instance.QuadOutOfArea(quad2) && !Singleton<TreeManager>.instance.CreateTree(out num, ref value, treeInfo1, vector3, false))
                                     {
                                     }
                                 }

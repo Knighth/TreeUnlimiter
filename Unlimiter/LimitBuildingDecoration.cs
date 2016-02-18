@@ -9,14 +9,14 @@ namespace TreeUnlimiter
         private static void ClearDecorations()
         {
             NetManager netManager = Singleton<NetManager>.instance;
-            for (int i = 1; i < 32768; i++)
+            for (int i = 1; i < Mod.MAX_NET_SEGMENTS; i++)
             {
                 if (netManager.m_segments.m_buffer[i].m_flags != NetSegment.Flags.None)
                 {
                     netManager.ReleaseSegment((ushort)i, true);
                 }
             }
-            for (int j = 1; j < 32768; j++)
+            for (int j = 1; j < Mod.MAX_NET_NODES; j++)
             {
                 if (netManager.m_nodes.m_buffer[j].m_flags != NetNode.Flags.None)
                 {

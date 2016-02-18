@@ -7,6 +7,12 @@ steam workshop update.
 
 **ChangeLog**
 -----------------------
+2-2-2016 -v1.3.0-f4_build_01
+ + changes for snowfall beta patch\dlc; 
+ + namely updates for the new weathermanager vs windmanger for the wind function
+ + updates in a few places for updated versions of OverlapQuad taking a terraincollisiontype
+
+
 1-5-2015 -v1.2.2-f3_build_004
  + corrected OnRemoved() vs OnDisabled() bug.
 

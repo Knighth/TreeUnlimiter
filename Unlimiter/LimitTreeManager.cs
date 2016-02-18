@@ -322,7 +322,7 @@ namespace TreeUnlimiter
             }
         }
 
-        private static bool OverlapQuad(TreeManager tm, Quad2 quad, float minY, float maxY, int layer, uint ignoreTree)
+        private static bool OverlapQuad(TreeManager tm, Quad2 quad, float minY, float maxY,ItemClass.CollisionType collisionType, int layer, uint ignoreTree)
         {
             unsafe
             {
@@ -341,7 +341,7 @@ namespace TreeUnlimiter
                         while (mTreeGrid != 0)
                         {
                             Vector3 position = tm.m_trees.m_buffer[mTreeGrid].Position;
-                            if ((double)Mathf.Max(Mathf.Max(vector2.x - 8f - position.x, vector2.y - 8f - position.z), Mathf.Max((float)((double)position.x - (double)vector21.x - 8), (float)((double)position.z - (double)vector21.y - 8))) < 0 && tm.m_trees.m_buffer[mTreeGrid].OverlapQuad(mTreeGrid, quad, minY, maxY))
+                            if ((double)Mathf.Max(Mathf.Max(vector2.x - 8f - position.x, vector2.y - 8f - position.z), Mathf.Max((float)((double)position.x - (double)vector21.x - 8), (float)((double)position.z - (double)vector21.y - 8))) < 0 && tm.m_trees.m_buffer[mTreeGrid].OverlapQuad(mTreeGrid, quad, minY, maxY,collisionType))
                             {
                                 return true;
                             }
@@ -529,7 +529,7 @@ namespace TreeUnlimiter
                 {
                     Exception exception = exception1;
                     object[] objArray = new object[] { tree, tm.m_trees.m_size, LimitTreeManager.Helper.TreeLimit, LimitTreeManager.Helper.UseModifiedTreeCap };
-                    Logger.dbgLog(string.Format(" Treexception: Releasing {0} {1} {2} {3}", objArray),exception1,true);
+                    Logger.dbgLog(string.Format(" FinalizeTree exception: Releasing {0} {1} {2} {3}", objArray), exception1, true);
                 }
                 tm.m_trees.ReleaseItem(tree);
                 tm.m_treeCount = (int)(tm.m_trees.ItemCount() - 1);
@@ -630,9 +630,9 @@ namespace TreeUnlimiter
         private static void UpdateData(TreeManager tm, SimulationManager.UpdateMode mode)
         {
             Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginLoading("TreeManager.UpdateData");
-            if (Mod.DEBUG_LOG_ON){Logger.dbgLog(" calling Ensure Init");}
+            if (Mod.DEBUG_LOG_ON){Logger.dbgLog(" UpdateData() calling Ensure Init");}
             LimitTreeManager.Helper.EnsureInit(3);
-
+            
             for (int i = 1; i < LimitTreeManager.Helper.TreeLimit; i++)
             {
                 if (tm.m_trees.m_buffer[i].m_flags != 0 && tm.m_trees.m_buffer[i].Info == null)
@@ -935,8 +935,8 @@ namespace TreeUnlimiter
                 nums.Add(0);   //int32-2 actual treecount
                 nums.Add(0);    //int32-3 reserved for future use.
                 nums.Add(0);   //int32-3 reserved for future use.
-                nums.Add(0);    //int32-3 reserved for future use.
-                nums.Add(0);   //int32-3 reserved for future use.
+                nums.Add(0);    //int32-4 reserved for future use.
+                nums.Add(0);   //int32-4 reserved for future use.
                 nums.Add(0);   //ushort Flags reserved for furture use. 
 
                 int num = 0;
@@ -947,7 +947,7 @@ namespace TreeUnlimiter
                 {
                     if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer.(no packing)"); }
 
-                    for (int i = Mod.DEFAULT_TREE_COUNT; i < LimitTreeManager.Helper.TreeLimit; i++) //from top of there range to ours.
+                    for (int i = Mod.DEFAULT_TREE_COUNT; i < LimitTreeManager.Helper.TreeLimit; i++) //from top of their range to ours.
                     {
                         TreeInstance treeInstance = mBuffer[i];
                         nums.Add(treeInstance.m_flags);
@@ -964,7 +964,7 @@ namespace TreeUnlimiter
                 {
                     if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer.(packing)"); }
 
-                    for (int i = Mod.DEFAULT_TREE_COUNT; i < Loader.LastSaveList.Count; i++) //from top of there range to ours.
+                    for (int i = Mod.DEFAULT_TREE_COUNT; i < Loader.LastSaveList.Count; i++) //from top of thier range to ours.
                     {
                         TreeInstance treeInstance = mBuffer[Loader.LastSaveList[i]];
                         nums.Add(treeInstance.m_flags);
