@@ -7,6 +7,9 @@ steam workshop update.
 
 **ChangeLog**
 -----------------------
+3-21-2015 v1.4.0-f3_build_01
+ + recompiled for updated dlls and version stamp for "landscape" update, no real code changes
+
 2-2-2016 -v1.3.0-f4_build_01
  + changes for snowfall beta patch\dlc; 
  + namely updates for the new weathermanager vs windmanger for the wind function

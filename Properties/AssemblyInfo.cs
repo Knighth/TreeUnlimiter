@@ -5,13 +5,13 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Permissions;
 [assembly: AssemblyVersion("1.3.0.0")]
-[assembly: AssemblyInformationalVersion("1.3.0f4 - Build_001")]
+[assembly: AssemblyInformationalVersion("1.4.2f3 - Build_001")]
 [assembly: Debuggable(DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints)]
-[assembly: AssemblyCompany("v130-f4_build_01")]
+[assembly: AssemblyCompany("v140-f3_build_01")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCopyright("Copyright ©  2015 - v1.3.0-f4_build_01")]
+[assembly: AssemblyCopyright("Copyright ©  2015 - v1.4.0-f3_build_01")]
 [assembly: AssemblyDescription("Cities Skyline Mod - Unlimited Trees Mod")]
-[assembly: AssemblyFileVersion("1.3.0.1")]
+[assembly: AssemblyFileVersion("1.4.0.1")]
 [assembly: AssemblyProduct("Unlimited Trees Mod")]
 [assembly: AssemblyTitle("Unlimited Trees Mod")]
 [assembly: AssemblyTrademark("")]
