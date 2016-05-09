@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using ColossalFramework;
 using ColossalFramework.IO;
@@ -74,16 +75,23 @@ namespace TreeUnlimiter
                 try
                 {
                     PrefabCollection<TreeInfo>.BeginSerialize(s);
-                    for (int j = 1; j < num; j++)
+                    int limit = Math.Min(num, idxList.Count);
+                    for (int j = 1; j < limit; j++)
                     {
-                        if (j < idxList.Count)
+                        if (mBuffer[idxList[j]].m_flags != 0)
                         {
-                            if (mBuffer[idxList[j]].m_flags != 0)
-                            {
-                                PrefabCollection<TreeInfo>.Serialize(mBuffer[idxList[j]].m_infoIndex);
-                            }
+                            PrefabCollection<TreeInfo>.Serialize(mBuffer[idxList[j]].m_infoIndex);
                         }
                     }
+
+                    // The easiest (and only) way to create a dummy DataSerializer that writes to Stream.Null. This simply calls RefCounter.Serialize().
+                    try
+                    {
+                        if (idxList.Count > limit)
+                            DataSerializer.Serialize(System.IO.Stream.Null, DataSerializer.Mode.Memory, 0, new RefCounter(limit, idxList));
+                    }
+                    catch (Exception ex)
+                    { Logger.dbgLog("RefCounter", ex, true); }
                 }
                 finally
                 {
@@ -165,4 +173,47 @@ namespace TreeUnlimiter
         }
 
 	}
+
+    class RefCounter : IDataContainer
+    {
+        readonly List<int> idxList;
+        readonly int startIndex;
+
+        public RefCounter(int startIndex, List<int> idxList)
+        {
+            this.startIndex = startIndex;
+            this.idxList = idxList;
+        }
+
+        // The given DataSerializer is the dummy one that writes to Stream.Null.
+        public void Serialize(DataSerializer s)
+        {
+            Debug.Log("[UT] Serialize from " + startIndex.ToString() + " to " + idxList.Count.ToString());
+
+            // Setup a dummy PrefabCollection<TreeInfo>.m_encodedArray so that we can continue refcounting.
+            FieldInfo encoderField = typeof(PrefabCollection<TreeInfo>).GetField("m_encodedArray", BindingFlags.NonPublic | BindingFlags.Static);
+            EncodedArray.UShort original = (EncodedArray.UShort) encoderField.GetValue(null);
+
+            try
+            {
+                EncodedArray.UShort dummy = EncodedArray.UShort.BeginWrite(s);
+                encoderField.SetValue(null, dummy);
+
+                // Now that the do-nothing m_encodedArray has been set, we can safely continue refcounting.
+                TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
+                int limit = idxList.Count;
+
+                for (int j = startIndex; j < limit; j++)
+                    if (mBuffer[idxList[j]].m_flags != 0)
+                        PrefabCollection<TreeInfo>.Serialize(mBuffer[idxList[j]].m_infoIndex);
+            }
+            finally
+            {
+                encoderField.SetValue(null, original);
+            }
+        }
+
+        public void AfterDeserialize(DataSerializer s) { }
+        public void Deserialize(DataSerializer s) { }
+    }
 }
