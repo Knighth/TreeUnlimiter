@@ -84,7 +84,8 @@ namespace TreeUnlimiter
                         }
                     }
 
-                    // The easiest (and only) way to create a dummy DataSerializer that writes to Stream.Null. This simply calls RefCounter.Serialize().
+                    // This is the easiest (and only) way to create a dummy DataSerializer that writes to Stream.Null.
+                    // This will simply call RefCounter.Serialize() below.
                     try
                     {
                         if (idxList.Count > limit)
@@ -188,7 +189,7 @@ namespace TreeUnlimiter
         // The given DataSerializer is the dummy one that writes to Stream.Null.
         public void Serialize(DataSerializer s)
         {
-            Debug.Log("[UT] Serialize from " + startIndex.ToString() + " to " + idxList.Count.ToString());
+            // Debug.Log("[UT] Serialize from " + startIndex.ToString() + " to " + idxList.Count.ToString());
 
             // Setup a dummy PrefabCollection<TreeInfo>.m_encodedArray so that we can continue refcounting.
             FieldInfo encoderField = typeof(PrefabCollection<TreeInfo>).GetField("m_encodedArray", BindingFlags.NonPublic | BindingFlags.Static);
