@@ -32,7 +32,7 @@ namespace TreeUnlimiter
             {
                 logSB.Length = 0;
                 string sPrefix = string.Concat("[", Mod.MOD_DBG_Prefix);
-                if (bNoIncMethod) { string.Concat(sPrefix, "] "); }
+                if (bNoIncMethod) { sPrefix = string.Concat(sPrefix, "] "); }
                 else
                 {
                     System.Diagnostics.StackFrame oStack = new System.Diagnostics.StackFrame(1); //pop back one frame, ie our caller.

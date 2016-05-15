@@ -11,6 +11,11 @@ namespace TreeUnlimiter
 {
 	static class Packer
 	{
+        /// <summary>
+        /// Returns a list of indexes where trees actually exist and hence need to be saved\processed.
+        /// Used by serialization process; Also I used this in Treeinfo validate upon load to save duplicating code.
+        /// </summary>
+        /// <returns>list object of int's</returns>
         public static List<int> GetPackedList()
         {
             List<int> treeidx;
@@ -38,6 +43,11 @@ namespace TreeUnlimiter
         }
 
 
+        /// <summary>
+        /// Custom serialize call
+        /// </summary>
+        /// <param name="idxList"> ByRef to the List of ints representing tree indexes that should be serialised</param>
+        /// <param name="s">ByRef to The DataSerializer object </param>
         internal static void Serialize(ref List<int> idxList, ref DataSerializer s)
         {
             
@@ -72,27 +82,40 @@ namespace TreeUnlimiter
                     else { num1.Write(0); }
                 }
                 num1.EndWrite();
+                //now lets process the treeinfo
                 try
                 {
                     PrefabCollection<TreeInfo>.BeginSerialize(s);
+                    //
                     int limit = Math.Min(num, idxList.Count);
                     for (int j = 1; j < limit; j++)
                     {
-                        if (mBuffer[idxList[j]].m_flags != 0)
+                        if (j < idxList.Count)  //pretty sure I had this here for a reason as count could be 0 or 1 in cases of error or no real trees.
                         {
-                            PrefabCollection<TreeInfo>.Serialize(mBuffer[idxList[j]].m_infoIndex);
+                            if (mBuffer[idxList[j]].m_flags != 0)
+                            {
+                                PrefabCollection<TreeInfo>.Serialize(mBuffer[idxList[j]].m_infoIndex);
+                            }
                         }
+                        else
+                        { Logger.dbgLog("j > idxList.Count Do we ever hit this?? No real trees to save."); }
                     }
 
+                    //Thale5's cool refcounter work around --THANKS!!
                     // This is the easiest (and only) way to create a dummy DataSerializer that writes to Stream.Null.
                     // This will simply call RefCounter.Serialize() below.
                     try
                     {
                         if (idxList.Count > limit)
+                        {
+                            if ((Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1))
+                            { Logger.dbgLog("Incrementing related reference counts for prefabs for trees > " + limit.ToString()); }
+
                             DataSerializer.Serialize(System.IO.Stream.Null, DataSerializer.Mode.Memory, 0, new RefCounter(limit, idxList));
+                        }
                     }
                     catch (Exception ex)
-                    { Logger.dbgLog("RefCounter", ex, true); }
+                    { Logger.dbgLog("RefCounter caused an error:", ex, true); }
                 }
                 finally
                 {
@@ -189,7 +212,8 @@ namespace TreeUnlimiter
         // The given DataSerializer is the dummy one that writes to Stream.Null.
         public void Serialize(DataSerializer s)
         {
-            // Debug.Log("[UT] Serialize from " + startIndex.ToString() + " to " + idxList.Count.ToString());
+            if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+            { Logger.dbgLog("Fake serialize from " + startIndex.ToString() + " to " + idxList.Count.ToString()); }
 
             // Setup a dummy PrefabCollection<TreeInfo>.m_encodedArray so that we can continue refcounting.
             FieldInfo encoderField = typeof(PrefabCollection<TreeInfo>).GetField("m_encodedArray", BindingFlags.NonPublic | BindingFlags.Static);
@@ -205,9 +229,18 @@ namespace TreeUnlimiter
                 int limit = idxList.Count;
 
                 for (int j = startIndex; j < limit; j++)
+                {
                     if (mBuffer[idxList[j]].m_flags != 0)
+                    {
                         PrefabCollection<TreeInfo>.Serialize(mBuffer[idxList[j]].m_infoIndex);
+                    }
+                }
             }
+            catch (Exception ex) 
+            {
+                Logger.dbgLog("", ex, true);
+            }
+
             finally
             {
                 encoderField.SetValue(null, original);

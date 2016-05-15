@@ -54,7 +54,6 @@ namespace TreeUnlimiter
 
                             }
                 */
-
             }
             catch (Exception ex)
             {
@@ -145,6 +144,7 @@ namespace TreeUnlimiter
                     int mupdtreenum = TreeMgr.m_updatedTrees.Length;
                     Logger.dbgLog("Debugging-TreeManager: treecount=" + mtreecountr.ToString() + " msize=" + mtreebuffsize.ToString() + " mbuffleg=" + mtreebuffleg.ToString() + " buffitemcount=" + mtreebuffcount.ToString() + " UpdatedTreesSize=" + mupdtreenum.ToString());
                     //Debug.Log("[TreeUnlimiter:OnLevelLoaded]  Done. ModStatus: " + Mod.IsEnabled.ToString() + "    RedirectStatus: " + Mod.IsSetupActive.ToString());
+                    
                 }
             }
 

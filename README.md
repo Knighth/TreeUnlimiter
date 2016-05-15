@@ -1,42 +1,26 @@
-﻿# Unlimited Trees Mod fork
+﻿# Unlimited Trees Mod
+A Cities:Skylines(v1.4.1) Mod to enable \ allow 1 million trees in a loaded game.
 
-My changes are in Packer.cs.
+This mod increases the default limit of 262,144 trees to 1,048,571 (or more) in a loaded\new game.
+Allows the new limits to be used in the Map Editor as well.
+Just make sure if you distribute a map that has more than normal you make this mod a requirement (if you want them to see all trees).
 
-I have identified the following issue:
+This mod may cause issues if enabled and trying to use the Asset Editor, however the latest
+versions (1.2+) should resolve those issues. If you run into problems
+you should disable the mod (turn it off) from the content manager and reload the asset editor.
+(a reload of the game itself should not be needed if using the latest build)
 
-Packer.Serialize() calls PrefabCollection<TreeInfo>.Serialize() for the first 262144 trees.
-PrefabCollection<TreeInfo>.Serialize() is a simple method:
+Compatible with the After Dark DLC patch\update (version 1.4.1+) of the game.
 
-	public static void Serialize(uint index)
-	{
-		PrefabCollection<T>.m_encodedArray.Write((ushort)index);
-		PrefabCollection<T>.PrefabData[] buf = PrefabCollection<T>.m_simulationPrefabs.m_buffer;
-		buf[(int)index].m_refcount = buf[(int)index].m_refcount + 1;
-	}
+Special thanks to:
 
-The first line is fine. It must be executed for the first 262144 trees only.
+DRen72 for maintaining\publishing the mod on the Steam Workshop
+http://steamcommunity.com/sharedfiles/filedetails/?id=455403039
 
-However, the latter part (refcounting) should cover all trees. Refcounting "locks" the infos that are
-currently used so that when the save is loaded again, infoIndexes will point to the same infos, not
-some arbitrary ones.
+Mabako for developing the original project and allowing it to be reused\updated for v1.1.0b
+ 
+Sebastian Schöner for his CitiesSkylines Detours project.
+https://github.com/sschoener/cities-skylines-detour
 
-I have written a fix for this issue. In the fix, the above method is called for the rest of the
-trees. I setup a dummy do-nothing m_encodedArray first in order not to affect serialization.
-My solution looks a bit weird because there are private structs, fields and constructors blocking
-access. At least it runs fast (no reflection in the loop).
+Thale5 for noticing a issue with custom trees >262k and providing a nice solution.
 
-The following test procedure verifies that this issue is real:
-
-1. Disable almost all mods. I had just UT, Unlock All, 25 Spaces, and Extra Landscaping enabled.
-2. Enable just a few custom trees (not all you have!)
-3. Start a new game.
-4. Fill the map with at least 262144 *standard* trees. I saved in between to pack them, to make
-   sure the 262144 slots are used.
-5. Place a few custom trees and memorize them.
-6. Save and Exit.
-7. In Content Manager, enable several more custom trees.
-8. Load the savegame.
-9. Notice that the custom trees have been replaced by other trees. I suppose null references
-   are also possible.
-
-Repeat with the suggested fix. The issue is gone.

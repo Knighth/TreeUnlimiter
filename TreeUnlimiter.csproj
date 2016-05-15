@@ -90,6 +90,7 @@
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Unlimiter\Packer.cs" />
+    <Compile Include="Unlimiter\TreePrefabsDebug.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

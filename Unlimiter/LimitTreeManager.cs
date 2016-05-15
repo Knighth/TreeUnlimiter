@@ -37,7 +37,15 @@ namespace TreeUnlimiter
                             Vector3 position = tm.m_trees.m_buffer[mTreeGrid].Position;
                             if (Mathf.Max(Mathf.Max(mMin - 8f - position.x, single - 8f - position.z), Mathf.Max(position.x - mMax - 8f, position.z - mMax1 - 8f)) < 0f)
                             {
-                                tm.m_trees.m_buffer[mTreeGrid].AfterTerrainUpdated(mTreeGrid, mMin, single, mMax, mMax1);
+                                //try catch added 5-12-2016
+                                try
+                                {
+                                    tm.m_trees.m_buffer[mTreeGrid].AfterTerrainUpdated(mTreeGrid, mMin, single, mMax, mMax1);
+                                }
+                                catch (Exception ex) 
+                                {
+                                    Logger.dbgLog("AfterTerrainUpdate failed on treeidx: " + mTreeGrid.ToString() + "  TreeInstance->m_infoIndex: " + tm.m_trees.m_buffer[mTreeGrid].m_infoIndex.ToString(), ex,true);
+                                }
                             }
                             mTreeGrid = tm.m_trees.m_buffer[mTreeGrid].m_nextGridTree;
                             int num5 = num4 + 1;
@@ -1079,11 +1087,81 @@ namespace TreeUnlimiter
                         treeManager.m_trees.ReleaseItem((uint)o);
                     }
                 }
+
+
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndDeserialize(s, "TreeManager");
             }
 
 
+            //KH 5-12-2016 we had to add this guy to be able to add checking for custom tree issues
+            //As earlier in the process we don't have access to 'scene_loaded data'
+            private static void AfterDeserialize(TreeManager.Data data ,DataSerializer s)
+            {
+                Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginAfterDeserialize(s, "TreeManager");
+                //TreePrefabsDebug.DumpLoadedPrefabInfos(3);
+                //Logger.dbgLog("before waitforload...");
+                Singleton<LoadingManager>.instance.WaitUntilEssentialScenesLoaded();
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                { 
+                    Logger.dbgLog("EssentialScenesLoaded...");
+                    TreePrefabsDebug.DumpLoadedPrefabInfos(4);
+                    Logger.dbgLog("before TreeInfo BindPrefabs...");
+                }
+
+                PrefabCollection<TreeInfo>.BindPrefabs();
+                if (Mod.DEBUG_LOG_ON)
+                { 
+                    Logger.dbgLog("TreeInfo prefabs bound...");
+                    TreePrefabsDebug.DumpLoadedPrefabInfos(5);
+                }
+
+                //TreeManager treeManager = Singleton<TreeManager>.instance;
+                //treeManager.m_treeCount = (int)(treeManager.m_trees.ItemCount() - 1u);
+                //TreePrefabsDebug.ValidateAllTreeInfos ();
+
+
+                TreeManager instance = Singleton<TreeManager>.instance;
+                TreeInstance[] buffer = instance.m_trees.m_buffer;
+
+                //Our additions, if enabled do our version if not theirs.
+                if (Mod.config.NullTreeOptionsValue != TreePrefabsDebug.NullTreeOptions.DoNothing)
+                {
+                    if (Mod.DEBUG_LOG_ON)
+                    { Logger.dbgLog("Starting custom Tree validation process..."); }
+                    TreeManager treeManager = Singleton<TreeManager>.instance;
+                    treeManager.m_treeCount = (int)(treeManager.m_trees.ItemCount() - 1u); //needed before getpackedlistcall
+
+                    if (TreePrefabsDebug.ValidateAllTreeInfos())
+                    {
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Tree validation process completed..."); }
+                    }
+                    else
+                    { TreePrefabsDebug.DoOriginal(); }
+                }
+                else
+                {
+                    TreePrefabsDebug.DoOriginal();
+/*                    //Original untouched.
+                    int num = buffer.Length;
+                    for (int i = 1; i < num; i++)
+                    {
+                        if (buffer[i].m_flags != 0)
+                        {
+
+                            TreeInfo info = buffer[i].Info;
+                            if (info != null)
+                            {
+                                buffer[i].m_infoIndex = (ushort)info.m_prefabDataIndex;
+                            }
+                        }
+                    }
+ */
+                }
+                instance.m_treeCount = (int)(instance.m_trees.ItemCount() - 1u);
+                Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndAfterDeserialize(s, "TreeManager");
+            }
             
+
             private static void Serialize(TreeManager.Data data, DataSerializer s)
             {
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginSerialize(s, "TreeManager");

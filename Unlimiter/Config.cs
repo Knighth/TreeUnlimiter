@@ -14,6 +14,9 @@ namespace TreeUnlimiter
         public bool UseCustomLogFile = false;
         public string CustomLogFilePath = Mod.MOD_DEFAULT_LOG_PATH;
         public int ScaleFactor = 4;
+        public TreePrefabsDebug.NullTreeOptions NullTreeOptionsValue = TreePrefabsDebug.NullTreeOptions.DoNothing;
+        public int NullTreeOptionsIndex = 0;
+        public bool EmergencyOnly_RemoveAllTrees = false;
 
 
         public static void ValidateConfig(ref Configuration theconfig)

@@ -17,7 +17,7 @@ namespace TreeUnlimiter
     {
         internal const ulong MOD_WORKSHOPID = 455403039uL;
         internal const string MOD_OFFICIAL_NAME = "Unlimited Trees Mod";
-        internal const string VERSION_BUILD_NUMBER = "1.0.4.0-f3 build_001";
+        internal const string VERSION_BUILD_NUMBER = "1.0.4.1-f2 build_004";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
         internal const string CURRENTMAXTREES_FORMATTEXT = "ScaleFactor: {0}   Maximum trees: {1}";
@@ -209,6 +209,8 @@ namespace TreeUnlimiter
                     config.DebugLogging = false;
                     config.DebugLoggingLevel = 0;
                     config.UseNoWindEffects = false;
+                    config.NullTreeOptionsIndex = 0;
+                    config.EmergencyOnly_RemoveAllTrees = false;
                     Configuration.Serialize(MOD_CONFIGPATH, config);
                     if (DEBUG_LOG_ON) { Logger.dbgLog("New configuation file created."); }
                 }
@@ -262,6 +264,31 @@ namespace TreeUnlimiter
         }
 
 
+        private void NullTreeOptionsChanged(int en)
+        {
+            TreePrefabsDebug.NullTreeOptions tmp;
+            switch (en)
+            {
+                case 0:
+                    tmp = TreePrefabsDebug.NullTreeOptions.DoNothing;
+                    break;
+                case 1:
+                    tmp = TreePrefabsDebug.NullTreeOptions.ReplaceTree;
+                    break;
+                case 2:
+                    tmp = TreePrefabsDebug.NullTreeOptions.RemoveTree;
+                    break;
+
+                default:
+                    tmp = TreePrefabsDebug.NullTreeOptions.DoNothing;
+                    break;
+            }
+
+            config.NullTreeOptionsValue = tmp;
+            config.NullTreeOptionsIndex = en;
+            Configuration.Serialize(MOD_CONFIGPATH, config);
+        }
+
         /// <summary>
         /// Called by game upon user entering options screen.
         /// icities interface for gui option setup
@@ -279,6 +306,8 @@ namespace TreeUnlimiter
                 UIHelperBase uIHelperBase = helper.AddGroup("Unlimited Trees Options");
                 uIHelperBase.AddCheckbox("Disable tree effects on wind", Mod.USE_NO_WINDEFFECTS, new OnCheckChanged(UseNoWindChecked));
                 uIHelperBase.AddCheckbox("Enable Verbose Logging", Mod.DEBUG_LOG_ON, new OnCheckChanged(LoggingChecked));
+                string[] sOptions = new string[] { "DoNothing (Default)", "Replace ", "Remove"};
+                uIHelperBase.AddDropdown("In case of tree errors:", sOptions, config.NullTreeOptionsIndex, NullTreeOptionsChanged);
 
                 GenerateMaxTreeSliderandLablel(ref uIHelperBase,ref panel);
 
@@ -340,6 +369,14 @@ namespace TreeUnlimiter
             yield return new WaitForSeconds(0.500f);
             try
             {
+                List<UIDropDown> dd = new List<UIDropDown>();
+                hlpComponent.GetComponentsInChildren<UIDropDown>(true, dd);
+                if (dd.Count > 0)
+                {
+                    dd[0].tooltip = "Sets what you want the mod to do when missing trees\n or trees with serious errors are found.\n DoNothing= Let game errors happen normally.\n ReplaceTree= Replaces any missing tree with a default game tree\n RemoveTree = Deletes the tree\n*Any changes made are commited upon you saving the file after loading\n*So you may want to disable autosave if debugging.";
+                    dd[0].selectedIndex = config.NullTreeOptionsIndex;
+                }
+
                 UICheckBox[] cbx = hlpComponent.GetComponentsInChildren<UICheckBox>(true);
                 if (cbx != null && cbx.Length > 0)
                 {
@@ -472,8 +509,11 @@ namespace TreeUnlimiter
                 RedirectCalls(typeof(BuildingDecoration), typeof(LimitBuildingDecoration), "SaveProps");
                 RedirectCalls(typeof(NaturalResourceManager), typeof(LimitNaturalResourceManager), "TreesModified");
                 RedirectCalls(typeof(TreeTool), typeof(LimitTreeTool), "ApplyBrush");
+                
                 RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "Serialize");
                 RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "Deserialize");
+                RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "AfterDeserialize");
+
                 MethodInfo[] methods = typeof(LimitTreeManager).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.NonPublic);
                 for (int i = 0; i < (int)methods.Length; i++)
                 {
