@@ -26,8 +26,8 @@ THE SOFTWARE.
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using UnityEngine;
 using TreeUnlimiter;
+using UnityEngine;
 namespace CitiesSkylinesDetour
 {
     // Struct to contain the state of the redirection of each call\method
@@ -61,7 +61,14 @@ namespace CitiesSkylinesDetour
             var fptr1 = from.MethodHandle.GetFunctionPointer();
             var fptr2 = to.MethodHandle.GetFunctionPointer();
             //Debugging
-            //if (bLog == true){ Debug.Log("[TreeUnlimiter] Detour: Patching from " + fptr1 + " to " + fptr2);}
+            //if (bLog == true) 
+            //{
+            //    if (from == null | to == null)
+            //    {
+            //        TreeUnlimiter.Logger.dbgLog("[TreeUnlimiter] Detour: Patching failed params were null");
+            //    }
+            //    TreeUnlimiter.Logger.dbgLog("[TreeUnlimiter] Detour: Patching from " + from.Name.ToString() + " " + fptr1.ToString() + " to " + fptr2.ToString()); 
+            //}
             return PatchJumpTo(fptr1, fptr2);
             // We could also use:
             //RedirectCall(from, to);
@@ -135,7 +142,8 @@ namespace CitiesSkylinesDetour
                 }
                 if (jitInfoFrom == null || jitInfoTo == null)
                 {
-                     Logger.dbgLog("Detour: Could not find methods!");
+                    
+                    Debug.Log("Detour: Could not find methods!");
                     return;
                 }
                 // copy over code_start, used_regs, code_size and ignore the rest for now.

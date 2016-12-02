@@ -2,7 +2,6 @@
 using ColossalFramework.IO;
 using ColossalFramework.Plugins;
 using ColossalFramework.Packaging;
-using ColossalFramework.Steamworks;
 using ColossalFramework;
 using UnityEngine;
 using System;

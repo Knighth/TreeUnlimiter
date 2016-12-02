@@ -3,7 +3,7 @@ using ColossalFramework.IO;
 using ColossalFramework.Math;
 using ColossalFramework.Plugins;
 using ColossalFramework.Threading;
-using ColossalFramework.Steamworks;
+//using ColossalFramework.Steamworks;
 using ICities;
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace TreeUnlimiter
         public Loader() {}
         public override void OnCreated(ILoading loading)
         {
-
+            
             if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnCreated fired."); }
             //It's useless to try and detect loadingmode here as the simmanager loading obj is empty on first start
             //and there after only contains the previous state at this stage, ie the prior map or assset or game.
@@ -38,7 +38,13 @@ namespace TreeUnlimiter
                     //if (mUpdateMode != SimulationManager.UpdateMode.LoadAsset || mUpdateMode != SimulationManager.UpdateMode.NewAsset)
                     //{
                     //    if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter:OnCreated]  AssetModeNotDetcted"); }
-                    Mod.Setup();  //by default we always run setup.
+
+                    //1.6.0 - This does not work anymore because onCreated() is firing
+                    // way to late in the load process now, so while I'm keeping it here.
+                    // it's really now as a back up.
+                    Mod.Setup();  //by default we always run setup again.
+
+                    
                     //}
                 }
                 //9-25-2015 - *no longer needed
@@ -87,7 +93,7 @@ namespace TreeUnlimiter
                     {
                         if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog(" AssetModeNotDetcted"); }
                         string strmsg = "[TreeUnlimiter:OnLevelLoaded]  *** Enabled but not setup yet, why did this happen??\n" +
-                            "Did OnCreated() not fire?? \n If you see this please contact author or make sure other mods did not cause a critical errors prior to this one during the load process." +
+                            "Did OnCreated() not fire?? did redirections exception error?\n If you see this please contact author or make sure other mods did not cause a critical errors prior to this one during the load process." +
                             "\n We are now going to disable this mod from running during this map load attempt.";
                         Logger.dbgLog(strmsg);
                         DebugOutputPanel.AddMessage(PluginManager.MessageType.Warning, strmsg);
@@ -98,12 +104,15 @@ namespace TreeUnlimiter
                 if (Mod.IsEnabled == true & Mod.IsSetupActive == true)
                 {
                     if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Enabled and setup already.(expected)"); }
+                    
                     if (mode == LoadMode.LoadAsset || mode == LoadMode.NewAsset)
                     {
                         //if we are asseteditor then revert the redirects, and reset the treemanager data.
                         if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("AssetModeDetcted, removing redirects and resetting treemanager"); }
-                        ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT, true);
-                        Mod.ReveseSetup();
+
+                        //1.6.0 commented out these 2 lines
+                        //ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT, true);
+                        //Mod.ReveseSetup();
 
                         if (mode == LoadMode.NewAsset & (Singleton<TreeManager>.instance.m_treeCount < 0))
                         {
@@ -112,7 +121,7 @@ namespace TreeUnlimiter
                         }
                     }
 
-                    if (mode == LoadMode.NewMap || mode == LoadMode.LoadMap)
+                    if (mode == LoadMode.NewMap || mode == LoadMode.LoadMap || mode == LoadMode.NewGame || mode== LoadMode.LoadMap)
                     {
                         //total hack to address wierd behavior of -1 m_treecount and 0 itemcount
                         // this hack attempts to jimmy things up the way things appear without the mod loaded in the map editor.
@@ -142,7 +151,8 @@ namespace TreeUnlimiter
                     int mtreebuffleg = TreeMgr.m_trees.m_buffer.Length;
                     uint mtreebuffcount = TreeMgr.m_trees.ItemCount();
                     int mupdtreenum = TreeMgr.m_updatedTrees.Length;
-                    Logger.dbgLog("Debugging-TreeManager: treecount=" + mtreecountr.ToString() + " msize=" + mtreebuffsize.ToString() + " mbuffleg=" + mtreebuffleg.ToString() + " buffitemcount=" + mtreebuffcount.ToString() + " UpdatedTreesSize=" + mupdtreenum.ToString());
+                    int mburntreenum = TreeMgr.m_burningTrees.m_size;
+                    Logger.dbgLog("Debugging-TreeManager: treecount=" + mtreecountr.ToString() + " msize=" + mtreebuffsize.ToString() + " mbuffleg=" + mtreebuffleg.ToString() + " buffitemcount=" + mtreebuffcount.ToString() + " UpdatedTreesSize=" + mupdtreenum.ToString() + " burntrees=" + mburntreenum.ToString());
                     //Debug.Log("[TreeUnlimiter:OnLevelLoaded]  Done. ModStatus: " + Mod.IsEnabled.ToString() + "    RedirectStatus: " + Mod.IsSetupActive.ToString());
                     
                 }
@@ -182,7 +192,9 @@ namespace TreeUnlimiter
 
             if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
             {
-                Mod.ReveseSetup(); //attempt to revert redirects | has it's own try catch.
+                //1.6.0 -
+                // we're going to temp. not do this.
+                //Mod.ReveseSetup(); //attempt to revert redirects | has it's own try catch.
             }
             base.OnReleased();
         }
@@ -194,6 +206,10 @@ namespace TreeUnlimiter
         public void ResetTreeMananger(uint tsize, uint updatesize, bool bforce = false)
         {
             uint num;
+            object[] ostring = new object[]{ tsize.ToString(), updatesize.ToString(), bforce.ToString(), Singleton<TreeManager>.instance.m_trees.m_buffer.Length.ToString() };
+            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true && TreeUnlimiter.Mod.DEBUG_LOG_LEVEL > 1)
+            { Logger.dbgLog(string.Format("ResetTreeManager tszie= {0} updatesize= {1} bforce= {2} currentTMlen= {3}", ostring)); }
+
             if ((int)Singleton<TreeManager>.instance.m_trees.m_buffer.Length != tsize || bforce == true)
             {
                 Singleton<TreeManager>.instance.m_trees = new Array32<TreeInstance>((uint)tsize);

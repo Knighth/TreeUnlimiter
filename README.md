@@ -3,14 +3,14 @@ A Cities:Skylines(v1.4.1) Mod to enable \ allow 1 million trees in a loaded game
 
 This mod increases the default limit of 262,144 trees to 1,048,571 (or more) in a loaded\new game.
 Allows the new limits to be used in the Map Editor as well.
-Just make sure if you distribute a map that has more than normal you make this mod a requirement (if you want them to see all trees).
+Just make sure if you distribute a map that has more than normal amount of trees you make this mod a requirement (if you want them to see all trees).
 
 This mod may cause issues if enabled and trying to use the Asset Editor, however the latest
 versions (1.2+) should resolve those issues. If you run into problems
 you should disable the mod (turn it off) from the content manager and reload the asset editor.
 (a reload of the game itself should not be needed if using the latest build)
 
-Compatible with the After Dark DLC patch\update (version 1.4.1+) of the game.
+Compatible with the After Dark DLC and Disasters DLC patch\updates (version 1.6.0+) of the game.
 
 Special thanks to:
 
@@ -22,5 +22,5 @@ Mabako for developing the original project and allowing it to be reused\updated 
 Sebastian Schöner for his CitiesSkylines Detours project.
 https://github.com/sschoener/cities-skylines-detour
 
-Thale5 for noticing a issue with custom trees >262k and providing a nice solution.
+Thale5 for noticing a issue with custom trees ref counting >262k and providing a nice solution.
 

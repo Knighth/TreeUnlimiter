@@ -1,7 +1,7 @@
 using CitiesSkylinesDetour;
 using ColossalFramework;
 using ColossalFramework.Plugins;
-using ColossalFramework.Steamworks;
+//using ColossalFramework.PlatformServices;
 using ColossalFramework.UI;
 using ICities;
 using System;
@@ -17,7 +17,7 @@ namespace TreeUnlimiter
     {
         internal const ulong MOD_WORKSHOPID = 455403039uL;
         internal const string MOD_OFFICIAL_NAME = "Unlimited Trees Mod";
-        internal const string VERSION_BUILD_NUMBER = "1.0.4.1-f2 build_004";
+        internal const string VERSION_BUILD_NUMBER = "1.0.6.0-f4 build_003";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
         internal const string CURRENTMAXTREES_FORMATTEXT = "ScaleFactor: {0}   Maximum trees: {1}";
@@ -29,7 +29,7 @@ namespace TreeUnlimiter
         public const int DEFAULT_TREE_COUNT = 262144;
         public const int DEFAULT_TREEUPDATE_COUNT = 4096;
         internal const int FormatVersion1NumOfTrees = 1048576;
-        internal const ushort CurrentFormatVersion = 3;
+        internal const ushort CurrentFormatVersion = 3;  //don't change unless really have to.
         public static int SCALED_TREE_COUNT = MOD_TREE_SCALE * DEFAULT_TREE_COUNT; //1048576
         public static int SCALED_TREEUPDATE_COUNT = MOD_TREE_SCALE * DEFAULT_TREEUPDATE_COUNT;//  16384;
         public static bool IsEnabled = false;
@@ -94,6 +94,7 @@ namespace TreeUnlimiter
             {
                 IsEnabled = true;
                 Logger.dbgLog(string.Concat("v", VERSION_BUILD_NUMBER, " Mod has been enabled. ", DateTime.Now.ToString()));
+                Mod.Setup(); //1.6.0
                 if (IsInited == false)
                 {
                     init();  //init will do a data pull from config off disk
@@ -149,6 +150,10 @@ namespace TreeUnlimiter
                 if (IsInited)
                 {
                     un_init();
+
+                    //1.6.0 - added next line to remove detours
+                    ReveseSetup();
+
                     Logger.dbgLog(string.Concat("v", VERSION_BUILD_NUMBER, " Mod has been unloaded, disabled or game exiting."));
                 }
             }
@@ -296,6 +301,29 @@ namespace TreeUnlimiter
         /// <param name="helper"></param>
         public void OnSettingsUI(UIHelperBase helper)
         {
+            //1.6 debugging grrrr
+            try
+            {
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                {
+                    SimulationManager SMgr = Singleton<SimulationManager>.instance;
+                    if (SMgr != null && SMgr.m_metaData != null)
+                    {
+                        Logger.dbgLog("updatemode: " + SMgr.m_metaData.m_updateMode.ToString());
+                    }
+                    else
+                    {
+                        Logger.dbgLog("updatemode: null or simmanager null");
+                    }
+ 
+                }
+
+ 
+            }
+            catch( Exception ex44)
+            { Logger.dbgLog("Exception OnSettingsUI :", ex44, true); }
+
+
             try
             {
                 //for setting up tooltips; let's subscribe to visibiliy event.
@@ -490,7 +518,25 @@ namespace TreeUnlimiter
             var bindflags1 = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
             var bindflags2 = BindingFlags.Static | BindingFlags.NonPublic;
             var theMethod = type1.GetMethod(p, bindflags1);
-            redirectDic.Add(theMethod, RedirectionHelper.RedirectCalls(theMethod, type2.GetMethod(p, bindflags2), false)); //makes the actual detour and stores the callstate info.
+            //var replacementMethod = type2.GetMethod(p,bindflags2);
+            //if (theMethod == null || replacementMethod == null)
+            //{
+            //    Logger.dbgLog("Failed to locate function: " + p + ((theMethod == null) ? "  orignal":"  replacement"));
+            //}
+            //if (Mod.DEBUG_LOG_ON)
+            //{
+                //redirectDic.Add(theMethod, RedirectionHelper.RedirectCalls(theMethod, type2.GetMethod(p, bindflags2), true)); //makes the actual detour and stores the callstate info.
+            //}
+            //else 
+            //{
+                redirectDic.Add(theMethod, RedirectionHelper.RedirectCalls(theMethod, type2.GetMethod(p, bindflags2), false)); //makes the actual detour and stores the callstate info.
+            //}
+
+                //if (Mod.DEBUG_LOG_ON)
+                //{
+                    //Logger.dbgLog(p.ToString() + " redirected");
+                //}
+
             //RedirectionHelper.RedirectCalls(type1.GetMethod(p, bindflags1), type2.GetMethod(p, bindflags2), false);
         }
 
@@ -509,9 +555,10 @@ namespace TreeUnlimiter
                 RedirectCalls(typeof(BuildingDecoration), typeof(LimitBuildingDecoration), "SaveProps");
                 RedirectCalls(typeof(NaturalResourceManager), typeof(LimitNaturalResourceManager), "TreesModified");
                 RedirectCalls(typeof(TreeTool), typeof(LimitTreeTool), "ApplyBrush");
-                
-                RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "Serialize");
+
+               
                 RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "Deserialize");
+                RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "Serialize");
                 RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "AfterDeserialize");
 
                 MethodInfo[] methods = typeof(LimitTreeManager).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.NonPublic);
@@ -520,11 +567,26 @@ namespace TreeUnlimiter
                     MethodInfo methodInfo = methods[i];
                     RedirectCalls(typeof(TreeManager), typeof(LimitTreeManager), methodInfo.Name);
                 }
+
+                RedirectCalls(typeof(LimitCommonBuildingAI), typeof(CommonBuildingAI), "TrySpreadFire");
+                RedirectCalls(typeof(CommonBuildingAI), typeof(LimitCommonBuildingAI), "HandleFireSpread");
+                RedirectCalls(typeof(DisasterHelpers), typeof(LimitDisasterHelpers), "DestroyTrees");
+                RedirectCalls(typeof(FireCopterAI), typeof(LimitFireCopterAI), "FindBurningTree");
+                RedirectCalls(typeof(ForestFireAI), typeof(LimitForestFireAI), "FindClosestTree");
+
+
                 //If windoverride enabled, otherwise don't.
                 if (USE_NO_WINDEFFECTS){RedirectCalls(typeof(WeatherManager), typeof(LimitWeatherManager), "CalculateSelfHeight");}
 
                 IsSetupActive = true;
                 if (DEBUG_LOG_ON) { Logger.dbgLog("Redirected calls."); }
+                if (DEBUG_LOG_ON) 
+                {
+                    foreach (var keypair in redirectDic)
+                    {
+                        Logger.dbgLog(keypair.Key.Name + " " + keypair.Value.f.ToString());
+                    }
+                }
             }
             catch (Exception exception1)
             {
@@ -537,10 +599,17 @@ namespace TreeUnlimiter
         /// </summary>
         public static void ReveseSetup()
         {
-            if (IsSetupActive == false) { return; }
+            if (IsSetupActive == false) 
+            {
+                if (DEBUG_LOG_ON) { Logger.dbgLog("Redirects are not active no need to reverse."); }
+                return; 
+            }
             if (redirectDic.Count == 0)
             {
-                if (DEBUG_LOG_ON) { Logger.dbgLog("No state entries exists to revert."); }
+                if (DEBUG_LOG_ON) { Logger.dbgLog("No state entries exists to revert. clearing state?"); }
+                //added 1.6.0 don't we need this, was there a reason we didn't before?
+                IsSetupActive = false; 
+                //end 1.6.0 add
                 return;
             }
             try

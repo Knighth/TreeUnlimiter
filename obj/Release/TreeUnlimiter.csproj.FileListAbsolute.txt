@@ -2,4 +2,3 @@ E:\Projects\TreeUnlimiter\Source\bin\Release\TreeUnlimiter.dll
 E:\Projects\TreeUnlimiter\Source\bin\Release\TreeUnlimiter.pdb
 E:\Projects\TreeUnlimiter\Source\obj\Release\TreeUnlimiter.dll
 E:\Projects\TreeUnlimiter\Source\obj\Release\TreeUnlimiter.pdb
-E:\Projects\TreeUnlimiter\Source\obj\Release\TreeUnlimiter.csprojResolveAssemblyReference.cache

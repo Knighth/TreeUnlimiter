@@ -62,6 +62,10 @@
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Unlimiter\LimitCommonBuildingAI.cs" />
+    <Compile Include="Unlimiter\LimitDisasterHelpers.cs" />
+    <Compile Include="Unlimiter\LimitFireCopterAI.cs" />
+    <Compile Include="Unlimiter\LimitForestFireAI.cs" />
     <Compile Include="Unlimiter\LimitTreeTool.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>

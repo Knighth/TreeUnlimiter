@@ -30,7 +30,7 @@ namespace TreeUnlimiter
             {    
                 return (ushort)Mathf.Clamp(num1 + num2 >> 1, 0, 65535);
             }
-
+            //end new
 
             Singleton<TreeManager>.instance.CalculateAreaHeight(single3, single4, single5, single6, out num3, out single, out single1, out single2);
             int num4 = Mathf.RoundToInt(single1 * 64f); //treeavg height

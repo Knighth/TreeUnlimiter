@@ -39,7 +39,7 @@ namespace TreeUnlimiter
                 {
                     TreeManager treeManager = Singleton<TreeManager>.instance;
                     TreeInstance[] tBuffer = treeManager.m_trees.m_buffer;
-                    Logger.dbgLog("Now deleating all active trees!");
+                    Logger.dbgLog("Now deleating all active trees as requested!");
                     for (uint i = 1; i < tBuffer.Length; i++)
                     {
                         if (tBuffer[i].m_flags != 0)
@@ -299,7 +299,7 @@ namespace TreeUnlimiter
             bool errflag = false;
             try
             {
-                if (Mod.config.EmergencyOnly_RemoveAllTrees)
+                if (Mod.config.EmergencyOnly_RemoveAllTrees == true)
                 {
                     if (Mod.config.NullTreeOptionsValue == NullTreeOptions.RemoveTree)
                     {

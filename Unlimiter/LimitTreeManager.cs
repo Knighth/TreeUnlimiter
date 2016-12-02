@@ -38,6 +38,8 @@ namespace TreeUnlimiter
                             if (Mathf.Max(Mathf.Max(mMin - 8f - position.x, single - 8f - position.z), Mathf.Max(position.x - mMax - 8f, position.z - mMax1 - 8f)) < 0f)
                             {
                                 //try catch added 5-12-2016
+                                //avoids some errors that blocks the game, and id's the tree is missing
+                                //we probably shouldn't even bother doing this.
                                 try
                                 {
                                     tm.m_trees.m_buffer[mTreeGrid].AfterTerrainUpdated(mTreeGrid, mMin, single, mMax, mMax1);
@@ -195,7 +197,7 @@ namespace TreeUnlimiter
                 for (int i = 0; i < mRenderedGroups.m_size; i++)
                 {
                     RenderGroup mBuffer = mRenderedGroups.m_buffer[i];
-                    if ((mBuffer.m_instanceMask & 1 << (tm.m_treeLayer & 31 & 31)) != 0)
+                    if ((mBuffer.m_instanceMask & 1 << (tm.m_treeLayer & 31)) != 0)
                     {
                         int mX = mBuffer.m_x * 540 / 45;
                         int mZ = mBuffer.m_z * 540 / 45;
@@ -232,6 +234,21 @@ namespace TreeUnlimiter
                     if (prefab != null && prefab.m_lodCount != 0)
                     {
                         TreeInstance.RenderLod(cameraInfo, prefab);
+                    }
+                }
+
+                if (Singleton<InfoManager>.instance.CurrentMode == InfoManager.InfoMode.None)
+                {
+                    int mSize = tm.m_burningTrees.m_size;
+                    for (int m = 0; m < mSize; m++)
+                    {
+                        TreeManager.BurningTree burningTree = tm.m_burningTrees.m_buffer[m];
+                        if (burningTree.m_treeIndex != 0)
+                        {
+                            float mFireIntensity = (float)burningTree.m_fireIntensity * 0.003921569f;
+                            float mFireDamage = (float)burningTree.m_fireDamage * 0.003921569f;
+                            tm.RenderFireEffect(cameraInfo, burningTree.m_treeIndex, ref tm.m_trees.m_buffer[burningTree.m_treeIndex], mFireIntensity, mFireDamage);
+                        }
                     }
                 }
             }
@@ -297,6 +314,164 @@ namespace TreeUnlimiter
                 Singleton<RenderManager>.instance.UpdateGroup(num * 45 / 540, num1 * 45 / 540, tm.m_treeLayer);
             }
         }
+
+
+        private static bool HandleFireSpread(TreeManager tm,ref TreeManager.BurningTree tree)
+        {
+            unsafe
+            {
+                BuildingInfo buildingInfo;
+                int num;
+                int num1;
+                int num2;
+                Vector3 position = tm.m_trees.m_buffer[tree.m_treeIndex].Position;
+                if (Singleton<TerrainManager>.instance.WaterLevel(VectorUtils.XZ(position)) > position.y + 1f)
+                {
+                    return false;
+                }
+                if (tm.m_trees.m_buffer[tree.m_treeIndex].GrowState == 0)
+                {
+                    return true;
+                }
+                int mFireIntensity = tree.m_fireIntensity + 15 >> 4;
+                Singleton<NaturalResourceManager>.instance.TryDumpResource(NaturalResourceManager.Resource.Burned, mFireIntensity, mFireIntensity, position, 20f, true);
+                float single = (float)(tree.m_fireIntensity * (128 - Mathf.Abs(tree.m_fireDamage - 128)));
+                InstanceID instanceID = new InstanceID()
+                {
+                    Tree = tree.m_treeIndex
+                };
+                InstanceManager.Group group = Singleton<InstanceManager>.instance.GetGroup(instanceID);
+                if (group != null)
+                {
+                    ushort disaster = group.m_ownerInstance.Disaster;
+                    if (disaster != 0)
+                    {
+                        DisasterManager disasterManager = Singleton<DisasterManager>.instance;
+                        DisasterInfo info = disasterManager.m_disasters.m_buffer[disaster].Info;
+                        int fireSpreadProbability = info.m_disasterAI.GetFireSpreadProbability(disaster, ref disasterManager.m_disasters.m_buffer[disaster]);
+                        single = single * ((float)fireSpreadProbability * 0.01f);
+                    }
+                }
+                int num3 = Mathf.Max((int)((position.x - 32f) / 32f + 270f), 0);
+                int num4 = Mathf.Max((int)((position.z - 32f) / 32f + 270f), 0);
+                int num5 = Mathf.Min((int)((position.x + 32f) / 32f + 270f), 539);
+                int num6 = Mathf.Min((int)((position.z + 32f) / 32f + 270f), 539);
+                for (int i = num4; i <= num6; i++)
+                {
+                    for (int j = num3; j <= num5; j++)
+                    {
+                        uint mTreeGrid = tm.m_treeGrid[i * 540 + j];
+                        int num7 = 0;
+                        while (mTreeGrid != 0)
+                        {
+                            Vector3 vector3 = tm.m_trees.m_buffer[mTreeGrid].Position;
+                            float single1 = Vector3.Distance(vector3, position);
+                            if (single1 < 32f && (float)Singleton<SimulationManager>.instance.m_randomizer.Int32(32768) * single1 < single)
+                            {
+                                tm.BurnTree(mTreeGrid, group, (int)tree.m_fireIntensity);
+                            }
+                            mTreeGrid = tm.m_trees.m_buffer[mTreeGrid].m_nextGridTree;
+                            int num8 = num7 + 1;
+                            num7 = num8;
+                            if (num8 < LimitTreeManager.Helper.TreeLimit)
+                            {
+                                continue;
+                            }
+                            CODebugBase<LogChannel>.Error(LogChannel.Core, string.Concat("Invalid list detected!\n", Environment.StackTrace));
+                            break;
+                        }
+                    }
+                }
+                int num9 = Mathf.Max((int)((position.x - 32f - 72f) / 64f + 135f), 0);
+                int num10 = Mathf.Max((int)((position.z - 32f - 72f) / 64f + 135f), 0);
+                int num11 = Mathf.Min((int)((position.x + 32f + 72f) / 64f + 135f), 269);
+                int num12 = Mathf.Min((int)((position.z + 32f + 72f) / 64f + 135f), 269);
+                BuildingManager buildingManager = Singleton<BuildingManager>.instance;
+                bool flag = false;
+                object[] paramcall ;  //krn
+                for (int k = num10; k <= num12; k++)
+                {
+                    for (int l = num9; l <= num11; l++)
+                    {
+                        ushort mBuildingGrid = buildingManager.m_buildingGrid[k * 270 + l];
+                        int num13 = 0;
+                        while (mBuildingGrid != 0)
+                        {
+                            Vector3 mPosition = buildingManager.m_buildings.m_buffer[mBuildingGrid].m_position;
+                            float single2 = VectorUtils.LengthSqrXZ(mPosition - position);
+                            if (!flag && single2 < 10000f)
+                            {
+                                BuildingInfo info1 = buildingManager.m_buildings.m_buffer[mBuildingGrid].Info;
+                                float single3 = info1.m_buildingAI.MaxFireDetectDistance(mBuildingGrid, ref buildingManager.m_buildings.m_buffer[mBuildingGrid]);
+                                if (single2 < single3 * single3 && info1.m_buildingAI.NearObjectInFire(mBuildingGrid, ref buildingManager.m_buildings.m_buffer[mBuildingGrid], instanceID, position))
+                                {
+                                    flag = true;
+                                }
+                            }
+                            if (single2 < 10816f)
+                            {
+                                float mAngle = buildingManager.m_buildings.m_buffer[mBuildingGrid].m_angle;
+                                buildingManager.m_buildings.m_buffer[mBuildingGrid].GetInfoWidthLength(out buildingInfo, out num, out num1);
+                                Vector3 vector31 = new Vector3(Mathf.Cos(mAngle), 0f, Mathf.Sin(mAngle));
+                                Vector3 vector32 = new Vector3(vector31.z, 0f, -vector31.x);
+                                Vector3 vector33 = position - mPosition;
+                                vector33 = vector33 - (Mathf.Clamp(Vector3.Dot(vector33, vector31), (float)(-num) * 4f, (float)num * 4f) * vector31);
+                                vector33 = vector33 - (Mathf.Clamp(Vector3.Dot(vector33, vector32), (float)(-num1) * 4f, (float)num1 * 4f) * vector32);
+                                float single4 = vector33.magnitude;
+                                if (single4 < 32f && (float)Singleton<SimulationManager>.instance.m_randomizer.Int32(65536) * single4 < single)
+                                {
+                                    //kh - use reflection1 1.60 testing - will use BP's reverse redirect
+                                    // once things seem to be working. reminder (also needed couple other places):
+                                    /* http://community.simtropolis.com/forums/topic/69673-tutorial-how-to-invoke-private-methods-without-reflection/ */
+
+                                    paramcall = new object[] { mBuildingGrid, buildingManager.m_buildings.m_buffer[mBuildingGrid], group};
+                                    var x = tm.GetType().GetMethod("TrySpreadFire", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, paramcall);
+                                   
+                                    //original
+                                   // TreeManager.TrySpreadFire(mBuildingGrid, ref buildingManager.m_buildings.m_buffer[mBuildingGrid], group);
+                                }
+                            }
+                            mBuildingGrid = buildingManager.m_buildings.m_buffer[mBuildingGrid].m_nextGridBuilding;
+                            int num14 = num13 + 1;
+                            num13 = num14;
+                            if (num14 < 49152)
+                            {
+                                continue;
+                            }
+                            CODebugBase<LogChannel>.Error(LogChannel.Core, string.Concat("Invalid list detected!\n", Environment.StackTrace));
+                            break;
+                        }
+                    }
+                }
+                Singleton<ImmaterialResourceManager>.instance.CheckLocalResource(ImmaterialResourceManager.Resource.FirewatchCoverage, position, out num2);
+                if (Singleton<SimulationManager>.instance.m_randomizer.Int32(100) < num2)
+                {
+                    FastList<ushort> serviceBuildings = buildingManager.GetServiceBuildings(ItemClass.Service.FireDepartment);
+                    int num15 = 0;
+                    while (num15 < serviceBuildings.m_size)
+                    {
+                        ushort mBuffer = serviceBuildings.m_buffer[num15];
+                        Vector3 mPosition1 = buildingManager.m_buildings.m_buffer[mBuffer].m_position;
+                        float single5 = VectorUtils.LengthSqrXZ(mPosition1 - position);
+                        BuildingInfo buildingInfo1 = buildingManager.m_buildings.m_buffer[mBuffer].Info;
+                        float single6 = buildingInfo1.m_buildingAI.MaxFireDetectDistance(mBuffer, ref buildingManager.m_buildings.m_buffer[mBuffer]);
+                        if (single5 >= single6 * single6 || !buildingInfo1.m_buildingAI.NearObjectInFire(mBuffer, ref buildingManager.m_buildings.m_buffer[mBuffer], instanceID, position))
+                        {
+                            num15++;
+                        }
+                        else
+                        {
+                            flag = true;
+                            break;
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+
+        //KH 11/2016: this originally here via marko, I've left it, though I just noticed
+        // it doesn't appear to be needed. Something to be looked during next round post 1.6
 
         private static void InitializeTree(TreeManager tm, uint tree, ref TreeInstance data, bool assetEditor)
         {
@@ -459,15 +634,15 @@ namespace TreeUnlimiter
                         {
                             num2 = ((num10 != num6 || num <= 0) && (num10 != num8 || num >= 0) ? Mathf.Max(num10, 0) : Mathf.Max((int)(((double)vector33.x - 72) / 32 + 270), 0));
                             num3 = ((num10 != num6 || num >= 0) && (num10 != num8 || num <= 0) ? Mathf.Min(num10, 539) : Mathf.Min((int)(((double)vector33.x + 72) / 32 + 270), 539));
-                            num4 = Mathf.Max((int)(((double)Mathf.Min(vector31.z, vector33.z) - 72) / 32 + 270), 0);
-                            num5 = Mathf.Min((int)(((double)Mathf.Max(vector31.z, vector33.z) + 72) / 32 + 270), 539);
+                            num4 = Mathf.Max((int)(((double)Mathf.Min(vector31.z, vector33.z) - 72f) / 32f + 270f), 0);
+                            num5 = Mathf.Min((int)(((double)Mathf.Max(vector31.z, vector33.z) + 72f) / 32f + 270f), 539);
                         }
                         else
                         {
                             num4 = ((num11 != num7 || num1 <= 0) && (num11 != num9 || num1 >= 0) ? Mathf.Max(num11, 0) : Mathf.Max((int)(((double)vector33.z - 72) / 32 + 270), 0));
                             num5 = ((num11 != num7 || num1 >= 0) && (num11 != num9 || num1 <= 0) ? Mathf.Min(num11, 539) : Mathf.Min((int)(((double)vector33.z + 72) / 32 + 270), 539));
-                            num2 = Mathf.Max((int)(((double)Mathf.Min(vector31.x, vector33.x) - 72) / 32 + 270), 0);
-                            num3 = Mathf.Min((int)(((double)Mathf.Max(vector31.x, vector33.x) + 72) / 32 + 270), 539);
+                            num2 = Mathf.Max((int)(((double)Mathf.Min(vector31.x, vector33.x) - 72f) / 32f + 270f), 0);
+                            num3 = Mathf.Min((int)(((double)Mathf.Max(vector31.x, vector33.x) + 72f) / 32f + 270f), 539);
                         }
                         for (int i = num4; i <= num5; i++)
                         {
@@ -517,6 +692,8 @@ namespace TreeUnlimiter
             }
         }
 
+
+        //redirected because we need it to call our version of finalizetree?
         private static void ReleaseTreeImplementation(TreeManager tm, uint tree, ref TreeInstance data)
         {
             if (data.m_flags != 0)
@@ -528,6 +705,34 @@ namespace TreeUnlimiter
                 Singleton<InstanceManager>.instance.ReleaseInstance(instanceID);
                 data.m_flags = (ushort)(data.m_flags | 2);
                 data.UpdateTree(tree);
+                
+                //1.6 new code from c\o related to burning trees
+                //why the hell they swap an empty one for old and create new empty one
+                // at the tail end of the fastlist of buring trees
+                //makes no logical sense to me yet. Why not just null and .remove the 
+                //darn object from the list?
+                if ((data.m_flags & 64) != 0)
+                {
+                    int mSize = tm.m_burningTrees.m_size - 1;
+                    int num = 0;
+                    while (num <= mSize)
+                    {
+                        if (tm.m_burningTrees.m_buffer[num].m_treeIndex != tree)
+                        {
+                            num++;
+                        }
+                        else
+                        {
+                            tm.m_burningTrees.m_buffer[num] = tm.m_burningTrees.m_buffer[mSize];
+                            TreeManager.BurningTree burningTree = new TreeManager.BurningTree();
+                            tm.m_burningTrees.m_buffer[mSize] = burningTree;
+                            tm.m_burningTrees.m_size = mSize;
+                            break;
+                        }
+                    }
+                }
+
+
                 data.m_flags = 0;
                 try
                 {
@@ -571,10 +776,15 @@ namespace TreeUnlimiter
                                 {
                                     TreeInfo info = tm.m_trees.m_buffer[mTreeGrid].Info;
                                     float single3 = MathUtils.SmoothClamp01(1f - Mathf.Sqrt(single2 / single1));
-                                    float mSize = position.y + info.m_generatedInfo.m_size.y * 1.25f * single3;
-                                    if ((double)mSize > (double)single)
+                                    
+                                    single3 = Mathf.Lerp(worldPos.y, position.y + info.m_generatedInfo.m_size.y * 1.25f, single3);
+                                    
+                                    //1.6.0? used to have the below but looks like I missed a change in 1.4 to math.lerp + worldpos.y
+                                    //float mSize = position.y + info.m_generatedInfo.m_size.y * 1.25f * single3;
+
+                                    if (single3 > single)
                                     {
-                                        single = mSize;
+                                        single = single3;
                                     }
                                 }
                             }
@@ -615,7 +825,7 @@ namespace TreeUnlimiter
                         while (mTreeGrid != 0)
                         {
                             Vector3 position = tm.m_trees.m_buffer[mTreeGrid].Position;
-                            if ((double)Mathf.Max(Mathf.Max(mMin - 8f - position.x, single - 8f - position.z), Mathf.Max((float)((double)position.x - (double)mMax - 8), (float)((double)position.z - (double)mMax1 - 8))) < 0)
+                            if ((double)Mathf.Max(Mathf.Max(mMin - 8f - position.x, single - 8f - position.z), Mathf.Max((float)((double)position.x - (double)mMax - 8f), (float)((double)position.z - (double)mMax1 - 8f))) < 0)
                             {
                                 tm.m_trees.m_buffer[mTreeGrid].TerrainUpdated(mTreeGrid, mMin, single, mMax, mMax1);
                             }
@@ -683,10 +893,10 @@ namespace TreeUnlimiter
         {
             unsafe
             {
-                int num = Mathf.Max((int)(((double)minX - 8) / 32 + 270), 0);
-                int num1 = Mathf.Max((int)(((double)minZ - 8) / 32 + 270), 0);
-                int num2 = Mathf.Min((int)(((double)maxX + 8) / 32 + 270), 539);
-                int num3 = Mathf.Min((int)(((double)maxZ + 8) / 32 + 270), 539);
+                int num = Mathf.Max((int)(((double)minX - 8f) / 32f + 270f), 0);
+                int num1 = Mathf.Max((int)(((double)minZ - 8f) / 32f + 270f), 0);
+                int num2 = Mathf.Min((int)(((double)maxX + 8f) / 32f + 270f), 539);
+                int num3 = Mathf.Min((int)(((double)maxZ + 8f) / 32f + 270f), 539);
                 for (int i = num1; i <= num3; i++)
                 {
                     for (int j = num; j <= num2; j++)
@@ -696,7 +906,7 @@ namespace TreeUnlimiter
                         while (mTreeGrid != 0)
                         {
                             Vector3 position = tm.m_trees.m_buffer[mTreeGrid].Position;
-                            if ((double)Mathf.Max(Mathf.Max(minX - 8f - position.x, minZ - 8f - position.z), Mathf.Max((float)((double)position.x - (double)maxX - 8), (float)((double)position.z - (double)maxZ - 8))) < 0)
+                            if ((double)Mathf.Max(Mathf.Max(minX - 8f - position.x, minZ - 8f - position.z), Mathf.Max((float)((double)position.x - (double)maxX - 8), (float)((double)position.z - (double)maxZ - 8))) < 0f)
                             {
                                 tm.m_updatedTrees[mTreeGrid >> 6] = tm.m_updatedTrees[mTreeGrid >> 6] | (ulong)1ul << (int)(mTreeGrid & 63);
                                 tm.m_treesUpdated = true;
@@ -1007,7 +1217,8 @@ namespace TreeUnlimiter
             {
                 short num;
                 short num1;
-//9-25-2015     if (Mod.DEBUG_LOG_ON){Debug.Log("[TreeUnlimiter::LimitTreeManager::Data:Deserialize()] calling Ensure Init");}
+                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(" WTF11??"); }
+                //9-25-2015     if (Mod.DEBUG_LOG_ON){Debug.Log("[TreeUnlimiter::LimitTreeManager::Data:Deserialize()] calling Ensure Init");}
                 LimitTreeManager.Helper.EnsureInit(1);
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginDeserialize(s, "TreeManager");
                 TreeManager treeManager = Singleton<TreeManager>.instance;
@@ -1017,6 +1228,7 @@ namespace TreeUnlimiter
                 int num2 = Mod.DEFAULT_TREE_COUNT ;  //262144
                 int length = (int)mTreeGrid.Length;
                 treeManager.m_trees.ClearUnused();
+                treeManager.m_burningTrees.Clear();  //v1.6.0
                 SimulationManager.UpdateMode mUpdateMode = Singleton<SimulationManager>.instance.m_metaData.m_updateMode;
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Concat(" mUpdatemode =", mUpdateMode.ToString())); }
                 bool flag = (mUpdateMode == SimulationManager.UpdateMode.NewAsset ? true : mUpdateMode == SimulationManager.UpdateMode.LoadAsset);
@@ -1035,7 +1247,7 @@ namespace TreeUnlimiter
                 {
                     if (mBuffer[k].m_flags != 0)
                     {
-                        mBuffer[k].m_infoIndex = (ushort)PrefabCollection<TreeInfo>.Deserialize();
+                        mBuffer[k].m_infoIndex = (ushort)PrefabCollection<TreeInfo>.Deserialize(true);
                     }
                 }
                 PrefabCollection<TreeInfo>.EndDeserialize(s);
@@ -1073,7 +1285,33 @@ namespace TreeUnlimiter
                     if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using ModifiedTreeCap - Calling Custom Deserializer."); }
                     LimitTreeManager.CustomSerializer.Deserialize();
                 }
+
                 //shared
+
+                //added for 1.6.0 (buring trees)
+                if (s.version >= 266)
+                {
+                    int numBuringTrees = (int)s.ReadUInt24();
+                    treeManager.m_burningTrees.EnsureCapacity(numBuringTrees);
+                    TreeManager.BurningTree burningTree = new TreeManager.BurningTree();
+                    for (int n = 0; n < numBuringTrees; n++)
+                    {
+                        burningTree.m_treeIndex = s.ReadUInt24();
+                        burningTree.m_fireIntensity = (byte)s.ReadUInt8();
+                        burningTree.m_fireDamage = (byte)s.ReadUInt8();
+                        if ((burningTree.m_treeIndex != 0) && (burningTree.m_treeIndex < mBuffer.Length))
+                        {
+                            treeManager.m_burningTrees.Add(burningTree);
+                            mBuffer[burningTree.m_treeIndex].m_flags = (ushort)(mBuffer[burningTree.m_treeIndex].m_flags | 64);
+                            if (burningTree.m_fireIntensity != 0)
+                            {
+                                mBuffer[burningTree.m_treeIndex].m_flags = (ushort)(mBuffer[burningTree.m_treeIndex].m_flags | 128);
+                            }
+                        }
+                    }
+                }
+                //end 1.6.0 additions
+
                 for (int o = 1; o < LimitTreeManager.Helper.TreeLimit; o++)
                 {
                     mBuffer[o].m_nextGridTree = 0;
@@ -1115,15 +1353,12 @@ namespace TreeUnlimiter
                     TreePrefabsDebug.DumpLoadedPrefabInfos(5);
                 }
 
-                //TreeManager treeManager = Singleton<TreeManager>.instance;
-                //treeManager.m_treeCount = (int)(treeManager.m_trees.ItemCount() - 1u);
-                //TreePrefabsDebug.ValidateAllTreeInfos ();
 
 
                 TreeManager instance = Singleton<TreeManager>.instance;
                 TreeInstance[] buffer = instance.m_trees.m_buffer;
 
-                //Our additions, if enabled do our version if not theirs.
+                //Our additions, if enabled do our version if not just C\O's.
                 if (Mod.config.NullTreeOptionsValue != TreePrefabsDebug.NullTreeOptions.DoNothing)
                 {
                     if (Mod.DEBUG_LOG_ON)
@@ -1140,7 +1375,8 @@ namespace TreeUnlimiter
                 }
                 else
                 {
-                    TreePrefabsDebug.DoOriginal();
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Tree validation process disabled..."); }
+                    TreePrefabsDebug.DoOriginal(); //same as below
 /*                    //Original untouched.
                     int num = buffer.Length;
                     for (int i = 1; i < num; i++)
@@ -1173,7 +1409,10 @@ namespace TreeUnlimiter
                     Packer.Serialize(ref Loader.LastSaveList, ref s);
                 }
                 catch (Exception ex)
-                { Logger.dbgLog("", ex, true); }
+                { 
+                    Logger.dbgLog("", ex, true);
+                    Logger.dbgLog("** May have failed to save trees due to last exception inside packer.seralize.\n Please enable verbose logging option and make contact with author via Steam to help debug the problem.", ex, true);
+                }
                 //original
                 /*
                 EncodedArray.UShort num1 = EncodedArray.UShort.BeginWrite(s);
@@ -1262,9 +1501,11 @@ namespace TreeUnlimiter
                     }
                     SimulationManager.UpdateMode mUpdateMode = Singleton<SimulationManager>.instance.m_metaData.m_updateMode;
 //9-25-2015         Mod.LastMode = mUpdateMode; //probably can ditch this now was used for debugging.
-
-                    if (mUpdateMode == SimulationManager.UpdateMode.LoadGame || mUpdateMode == SimulationManager.UpdateMode.LoadMap 
-                        || mUpdateMode == SimulationManager.UpdateMode.NewGame || mUpdateMode == SimulationManager.UpdateMode.NewMap)
+                    
+                    if (mUpdateMode == SimulationManager.UpdateMode.LoadGame || mUpdateMode == SimulationManager.UpdateMode.LoadMap
+                        || mUpdateMode == SimulationManager.UpdateMode.NewGameFromMap || mUpdateMode == SimulationManager.UpdateMode.NewGameFromScenario
+                        || mUpdateMode == SimulationManager.UpdateMode.NewMap || mUpdateMode == SimulationManager.UpdateMode.LoadScenario
+                        || mUpdateMode == SimulationManager.UpdateMode.NewScenarioFromGame || mUpdateMode == SimulationManager.UpdateMode.NewScenarioFromGame)
                     {
                         return true;
                     }

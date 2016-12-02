@@ -7,7 +7,48 @@ steam workshop update.
 
 **ChangeLog**
 -----------------------
-3-21-2015 v1.4.0-f3_build_01
+11-29-2016 v1.6.0-f4 Build_003
+ + updated code to account for LoadingExtentions:Oncreated no longer firing early in the process.
+   we now enable our detoured function when enabled with 'enabled'\onstartup and it's only disabled when 'disabled'
+   we do load when Asset's are loading now like oldschool oringinal way, seems to work now, made related adjustments.
+
+ + Added reverse detour for CommonBuildingAI.TrySpreadFire, reflection invoke wasn't working right.
+ + various other minor tweaks for final public build related to disaster patch.
+
+
+11-20-2016 v1.6.0.-f3_build 01
++ basic changes for compatibility with disaters update.
+
+5-14-2016 v1.4.1-f2_build_04 (beta)
+ + Added feature, via the options menu to enable users to select how the game should deal with
+   'null' or missing tree-info's that happen when a tree does not exist anymore or is disabled.
+   DoNothing= just as it sounds it does nothing, the game operates nomally and will generate errors.
+   ReplaceTree = Replaces any null treeinfo's with PrefabCollection<TreeInfo>(0), a built in game tree.
+   RemoveTree = Deletes any tree where there is a null treeinfo or index problem.
+   
+   Having ReplaceTree or RemoveTree set does increase loadtimes but it's marginal unless
+   there are a ton of damaged\null trees, even then it's a seconds or two for every couple thousand.
+   the main perf hit is actually just the logging, with verbose mode turned off it's less.
+
+ + Added open that can only be enabled by editing the config file, which is provided only as a
+   last resort for users, it allows will remove ALL trees from a map.
+   The setting is <EmergencyOnly_RemoveAllTrees>false</EmergencyOnly_RemoveAllTrees>
+   To use it you must set it to "true", while ALSO having RemoveTree set, and also
+   you must have debug logging enabled AND the debuglogginglevel must be > 1.
+   The reason for ALL those conditions is for safety...you must really mean to enable it.
+   When activated any map you load will have *all* it's trees deleted.  I suggest if anyone
+   uses this they make sure they have auto-save disabled.
+   This option is not meant to be left enabled, it's meant for set it... load the game.. load map
+   save cleaned map, exit game and reverse the related settings back.
+
+   
+
+5-12-2016 v1.4.1-f2_build_01
+ +recompile for updated dlls in lastest patch
+ +incorporated thale5's suggested patch for custom tree infoindex issues above for trees above 262k
+ many thanks for that patch, solves a long standing issue I didn't have a good solution for previously.
+
+3-21-2016 v1.4.0-f3_build_01
  + recompiled for updated dlls and version stamp for "landscape" update, no real code changes
 
 2-2-2016 -v1.3.0-f4_build_01
@@ -16,7 +57,7 @@ steam workshop update.
  + updates in a few places for updated versions of OverlapQuad taking a terraincollisiontype
 
 
-1-5-2015 -v1.2.2-f3_build_004
+1-5-2016 -v1.2.2-f3_build_004
  + corrected OnRemoved() vs OnDisabled() bug.
 
 11-18-2015 -v1.2.2-f3_Build_003

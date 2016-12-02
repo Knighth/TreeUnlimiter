@@ -11,6 +11,60 @@ namespace TreeUnlimiter
 {
 	static class Packer
 	{
+
+        /// <summary>
+        /// Feed it a packed list it will filter throught he buringtree's buffer
+        /// and change old indexes to match what 99.99% of the time should be the
+        /// index when deserialised. Only needed when 'packing' is used.
+        /// </summary>
+        /// <param name="orgindex">a 'packed' list of tree indexes</param>
+        /// <returns></returns>
+        public static int ReOrderBuringTrees(List<int> orgindex)
+        {
+            int reordered = 0;
+            if (orgindex == null || orgindex.Count < 2) 
+            {
+                if (Mod.DEBUG_LOG_ON)
+                { Logger.dbgLog("orgindex was null or < 2; during call. aborting reorder;");}
+                return 0; 
+            }
+            FastList<TreeManager.BurningTree> tmburning = Singleton<TreeManager>.instance.m_burningTrees;
+            try
+            {
+                if (tmburning.m_size > 0 )
+                {
+                    for (int i = 1; i < orgindex.Count; i++)
+                    {
+                        //int oidx = orgindex[i];  //why do an assignment everytime?
+                        for (int j = 0; j < tmburning.m_size; j++)
+                        {
+                            if (tmburning.m_buffer[j].m_treeIndex == orgindex[i])
+                            {
+                                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                                {
+                                    object[] logstring = new object[] { tmburning.m_buffer[j].m_treeIndex.ToString(), orgindex[i].ToString(), i.ToString() };
+                                    Logger.dbgLog(string.Format("matched buring: {0} == orgidx: {1}  reassigned: {2}", logstring));
+                                }
+                                tmburning.m_buffer[j].m_treeIndex = (uint)i;
+                                reordered++;
+                            }
+                        }
+
+                    }
+                }
+
+                else
+                {
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                    { Logger.dbgLog("No burning trees to reorder or orgindex was < 2, skipping."); }
+                }
+            }
+            catch (Exception ex)
+            { Logger.dbgLog("", ex, true); }
+
+            return reordered;
+        }
+
         /// <summary>
         /// Returns a list of indexes where trees actually exist and hence need to be saved\processed.
         /// Used by serialization process; Also I used this in Treeinfo validate upon load to save duplicating code.
@@ -63,6 +117,7 @@ namespace TreeUnlimiter
             }
 
             TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
+            FastList<TreeManager.BurningTree> tmburning = Singleton<TreeManager>.instance.m_burningTrees;
             int num = Mod.DEFAULT_TREE_COUNT; //262144
 
             //if (idxList != null && idxList.Count >= Mod.DEFAULT_TREE_COUNT) //custom one.
@@ -98,7 +153,7 @@ namespace TreeUnlimiter
                             }
                         }
                         else
-                        { Logger.dbgLog("j > idxList.Count Do we ever hit this?? No real trees to save."); }
+                        { Logger.dbgLog("j >= idxList.Count Do we ever hit this?? No real trees to save."); }
                     }
 
                     //Thale5's cool refcounter work around --THANKS!!
@@ -121,6 +176,7 @@ namespace TreeUnlimiter
                 {
                     PrefabCollection<TreeInfo>.EndSerialize(s);
                 }
+
                 EncodedArray.Short num2 = EncodedArray.Short.BeginWrite(s);
                 for (int k = 1; k < num; k++)
                 {
@@ -133,6 +189,7 @@ namespace TreeUnlimiter
                     }
                 }
                 num2.EndWrite();
+
                 EncodedArray.Short num3 = EncodedArray.Short.BeginWrite(s);
                 for (int l = 1; l < num; l++)
                 {
@@ -145,6 +202,21 @@ namespace TreeUnlimiter
                     }
                 }
                 num3.EndWrite();
+
+                //reorder if neccessary
+                if ((uint)tmburning.m_size > 0)
+                { 
+                    int retval = ReOrderBuringTrees(idxList); 
+                }
+                s.WriteUInt24((uint)tmburning.m_size);
+                for (int m = 0; m < tmburning.m_size; m++)
+                {
+                    s.WriteUInt24(tmburning.m_buffer[m].m_treeIndex);
+                    s.WriteUInt8(tmburning.m_buffer[m].m_fireIntensity);
+                    s.WriteUInt8(tmburning.m_buffer[m].m_fireDamage);
+                }
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + "buring trees"); }
+
                 if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using packer seralizer."); }
 
             }
@@ -173,6 +245,7 @@ namespace TreeUnlimiter
                 {
                     PrefabCollection<TreeInfo>.EndSerialize(s);
                 }
+                
                 EncodedArray.Short num2 = EncodedArray.Short.BeginWrite(s);
                 for (int k = 1; k < num; k++)
                 {
@@ -191,6 +264,15 @@ namespace TreeUnlimiter
                     }
                 }
                 num3.EndWrite();
+
+                s.WriteUInt24((uint)tmburning.m_size);
+                for (int m = 0; m < tmburning.m_size; m++)
+                {
+                    s.WriteUInt24(tmburning.m_buffer[m].m_treeIndex);
+                    s.WriteUInt8(tmburning.m_buffer[m].m_fireIntensity);
+                    s.WriteUInt8(tmburning.m_buffer[m].m_fireDamage);
+                }
+
                 if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using original seralizer."); }
             }
            // Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
