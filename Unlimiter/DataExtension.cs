@@ -5,14 +5,97 @@ namespace TreeUnlimiter
 {
     public class DataExtension : SerializableDataExtensionBase
     {
-        public override void OnLoadData()
+        public static ISerializableData _serializableData;
+        public static UTSaveDataContainer m_UTSaveDataContainer;
+
+        internal static void DumpDataKeys()
         {
-            //if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("OnLoadData() fired"); }
+            try
+            {
+                Logger.dbgLog("Dumping _serializedData.EnumData()");
+                if (_serializableData == null)
+                {
+                    Logger.dbgLog("_serializedData: is null.");
+                }
+                else
+                {
+                    string[] tmpstrarray = _serializableData.EnumerateData();
+                    if(tmpstrarray !=null && tmpstrarray.Length != 0)
+                    {
+                        Logger.dbgLog("extra data count: " + tmpstrarray.Length.ToString());
+                        for (int i = 0; i < tmpstrarray.Length; i++) 
+                        {
+                           Logger.dbgLog(string.Format("entry:{0} name:{1}", i.ToString(),tmpstrarray[i].ToString()));
+                        }
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.dbgLog(ex.ToString());
+            }
+ 
         }
 
+        //This get fired once per app 'Session'
+        //It does not fire once per each map load unless you exit to mainmenu.
+        public override void OnCreated(ISerializableData serializedData) 
+        {
+            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Oncreated() fired  " + DateTime.Now.ToString(Mod.DTMilli)); }
+            try
+            {
+                DataExtension._serializableData = serializedData;
+            }
+            catch (Exception ex)
+            { Logger.dbgLog(ex.ToString()); }
+        }
+
+        //This runs way late in the process Post Data.Deseralize() and Post Data.AfterDeserialize()
+        //It basically doesn't get called till SimManager.LateUpdate()  gets called which is after(I think) LateUpdate()
+        //has been called on all the managers.Effectively it's onLevelLoaded for DataExtentions Class
+        public override void OnLoadData()
+        {
+            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("OnLoadData() fired"); }
+            try
+            {
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                {
+                        DumpDataKeys();
+                }
+            }
+            catch (Exception ex)
+            { Logger.dbgLog(ex.ToString()); }
+
+        }
+
+        //This actually fires just prior to Data.Serialize calls and prior to SerializedStorageDictionary being saved.
         public override void OnSaveData()
         {
-            LimitTreeManager.CustomSerializer.Serialize();
+            try
+            {
+                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("\r\n  OnSaveData() fired  " + DateTime.Now.ToString(Mod.DTMilli)); }
+                LimitTreeManager.CustomSerializer.Serialize();
+            }
+            catch (Exception ex1)
+            {
+                Logger.dbgLog("", ex1, true);
+            }
+            try
+            {
+                LimitTreeManager.CustomSerializer.SerializeBurningTreeWrapper();
+            }
+            catch (Exception ex)
+            {
+                Logger.dbgLog("", ex, true);
+            }
+
         }
+        public override void OnReleased()
+        {
+            _serializableData = null;
+            m_UTSaveDataContainer = null;
+        }
+
     }
 }

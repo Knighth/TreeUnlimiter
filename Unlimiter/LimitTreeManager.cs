@@ -3,11 +3,14 @@ using ColossalFramework.IO;
 using ColossalFramework.Math;
 using ColossalFramework.Threading;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
+using ICities;
 using UnityEngine;
 
 namespace TreeUnlimiter
@@ -708,7 +711,7 @@ namespace TreeUnlimiter
                 
                 //1.6 new code from c\o related to burning trees
                 //why the hell they swap an empty one for old and create new empty one
-                // at the tail end of the fastlist of buring trees
+                // at the tail end of the fastlist of burning trees
                 //makes no logical sense to me yet. Why not just null and .remove the 
                 //darn object from the list?
                 if ((data.m_flags & 64) != 0)
@@ -985,7 +988,7 @@ namespace TreeUnlimiter
 
                         if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Format("save format - version {0} detected.",versionnum.ToString())); }
 
-                        numStoredTrees = (numArray1[1] << 16) | (numArray1[2] & 0xffff);
+                        numStoredTrees = (numArray1[1] << 16) | (numArray1[2] & 0xffff);  //tree limit figure used when saved not a tree count
                         if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("stored array count = " + numStoredTrees.ToString()); }
                         if (numStoredTrees <= 0 | numStoredTrees > 2097152)
                         { 
@@ -1002,7 +1005,7 @@ namespace TreeUnlimiter
                         //get treecount from header in v3+
                         if (versionnum > 2) 
                         { 
-                            headerTreeCount = (numArray1[3] << 16) | (numArray1[4] & 0xffff);
+                            headerTreeCount = (numArray1[3] << 16) | (numArray1[4] & 0xffff);  //actual number of stored trees
                             fileflags = numArray1[9];
                             if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("stored treecount = " + headerTreeCount.ToString()); }
                         }
@@ -1013,6 +1016,7 @@ namespace TreeUnlimiter
                     if ((fileflags & (ushort)Helper.SaveFlags.packed) != (ushort)Helper.SaveFlags.packed)
                     {
                         if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Stored data is not packed. reading " + (numStoredTrees - Mod.DEFAULT_TREE_COUNT ).ToString() + " number of objects"); }
+                        TreeInstance.Flags flags1;
                         for (int i = 262144; i < numStoredTrees; i++) //start at the top thier limit.
                         {
                             uint num4 = num;
@@ -1020,7 +1024,11 @@ namespace TreeUnlimiter
                             {
                                 uint num5 = num;
                                 num = num5 + 1;
-                                mBuffer[i].m_flags = numArray1[num5];
+                                //do flags - //1.6.0 remove burning and damage from all.
+                                flags1 = (TreeInstance.Flags)numArray1[num5];
+                                flags1 &= ~(TreeInstance.Flags.FireDamage | TreeInstance.Flags.Burning);
+                                mBuffer[i].m_flags = (ushort)flags1; 
+
                                 if (mBuffer[i].m_flags != 0)
                                 {
                                     uint num6 = num;
@@ -1044,7 +1052,7 @@ namespace TreeUnlimiter
                             {
                                 Exception exception = exception1;
                                 object[] objArray1 = new object[] { i, num4, (int)numArray1.Length };
-                                Logger.dbgLog(string.Format("Error - While fetching tree {0} in pos {1} of {2}", objArray1), exception1, true);
+                                Logger.dbgLog(string.Format("Error (non packed) - While fetching tree {0} in pos {1} of {2}", objArray1), exception1, true);
                                 throw exception;
                             }
                         }
@@ -1061,6 +1069,7 @@ namespace TreeUnlimiter
                         }
                         int i = Mod.DEFAULT_TREE_COUNT;  //start adding at location 262144.
                         int j = 0;
+                        TreeInstance.Flags flags2; //hold temp flag values
                         for (j = 0; j < headerTreeCount ; j++) //use our stored treecount limit.
                         {
                             uint num4 = num; //for error logging
@@ -1068,7 +1077,14 @@ namespace TreeUnlimiter
                             {
                                 uint num5 = num; //store current array index.
                                 num = num5 + 1; //bump master arrayindex tracker.
-                                mBuffer[i].m_flags = numArray1[num5];
+
+
+                                //do flags - //1.6.0 remove burning and damage from all.
+                                flags2 = (TreeInstance.Flags)numArray1[num5];
+                                flags2 &= ~(TreeInstance.Flags.FireDamage | TreeInstance.Flags.Burning);
+                                mBuffer[i].m_flags = (ushort)flags2; 
+
+                               
                                 if (mBuffer[i].m_flags != 0)
                                 {
                                     uint num6 = num; //store current master.
@@ -1105,11 +1121,168 @@ namespace TreeUnlimiter
                     else
                     { treeLimit1 = new object[] { num3, headerTreeCount ,(numStoredTrees - Mod.DEFAULT_TREE_COUNT) }; }
                     Logger.dbgLog(string.Format(" Loaded {0} trees of {1} (out of {2} possible in extra range)", treeLimit1));
+
                     return true;
                 }
             }
 
 
+            internal static bool DeserializeBurningTrees()
+            {
+                //addtions burning trees
+                try
+                {
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("threadname: " + Thread.CurrentThread.Name); }
+                    UTSaveDataContainer oMasterContainer;
+                    oMasterContainer = DeseralizeSaveDataContainer();  //farm it out, always returns at least bare object.
+                    if (oMasterContainer == null || oMasterContainer.SaveType ==1 || oMasterContainer.m_BurningTreeData == null)
+                    {
+                        Logger.dbgLog("Data Container is null or there is no m_BurningTreeData data to load");
+                        return false;
+                    }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                    { Logger.dbgLog(string.Format("Containername:{0} Created:{1} with GameVersionStamp:{2}", oMasterContainer.ContainerName, oMasterContainer.CreatedDate.ToString(), oMasterContainer.GameVersion)); }
+                    TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
+                    if (oMasterContainer.m_BurningTreeData.BurningCount > 0 && oMasterContainer.m_BurningTreeData.BurningTreeList != null)
+                    {
+                        FastList<TreeManager.BurningTree> TMburningtrees = Singleton<TreeManager>.instance.m_burningTrees;
+                        if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                        { Logger.dbgLog(string.Format("org m_size: {0} org bufflen: {1} To-processcount: {2}", TMburningtrees.m_size.ToString(), TMburningtrees.m_buffer.Length.ToString(),oMasterContainer.m_BurningTreeData.BurningCount.ToString())); }
+   
+                        TreeManager.BurningTree oBurningTree = new TreeManager.BurningTree();
+                        int tmpcounter = 0; int tmpaddcounter = 0;
+                        foreach (UTSaveDataContainer.UTBurningTreeInstance UTburn in oMasterContainer.m_BurningTreeData.BurningTreeList)
+                        {
+                            //are we valid, are we going to link to an existing created tree?
+                            if (UTburn.m_treeIndex != 0 && UTburn.m_treeIndex < mBuffer.Length && (mBuffer[UTburn.m_treeIndex].m_flags & (ushort)TreeInstance.Flags.Created) != 0)
+                            {
+                                oBurningTree.m_treeIndex = UTburn.m_treeIndex;
+                                oBurningTree.m_fireDamage = UTburn.m_fireDamage;
+                                oBurningTree.m_fireIntensity = UTburn.m_fireIntensity;
+                                TMburningtrees.Add(oBurningTree);
+                                tmpaddcounter++;
+                                    
+                                mBuffer[oBurningTree.m_treeIndex].m_flags = (ushort)(mBuffer[oBurningTree.m_treeIndex].m_flags | 64);
+
+                                if (oBurningTree.m_fireIntensity != 0)
+                                { mBuffer[oBurningTree.m_treeIndex].m_flags = (ushort)(mBuffer[oBurningTree.m_treeIndex].m_flags | 128); }
+
+                            }
+                            else
+                            {
+                                Logger.dbgLog(string.Format("Skipping extra tree location:{0}  stored m_treeindex: {1}  because = 0 or < active TreeBuffer.Length or TreeBuffer flags not created {2}", tmpcounter.ToString(), UTburn.m_treeIndex.ToString(), mBuffer[UTburn.m_treeIndex].m_flags.ToString()));
+                            }
+                            tmpcounter++;
+                        }
+                        if (Mod.DEBUG_LOG_ON)
+                        { Logger.dbgLog("after m_size: " + TMburningtrees.m_size.ToString() + "  after bufflen: " + TMburningtrees.m_buffer.Length.ToString()); }
+                        
+                        Logger.dbgLog(string.Format("Processed {0} extra saved burning trees. Added {1} extra saved burning trees", tmpcounter.ToString(), tmpaddcounter.ToString()));
+                    }
+                    else
+                    {
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("MasterContainer.burningtreeData == null no burning tree data to add."); }
+                    }
+
+                }
+                catch (Exception ex51)
+                { 
+                    Logger.dbgLog(ex51.ToString());
+                    return false;
+                }
+                return true;
+
+            }
+
+            internal static UTSaveDataContainer DeseralizeSaveDataContainer()
+            {
+                UTSaveDataContainer oMasterContainer = new UTSaveDataContainer();
+                byte[] ourBytes = null;
+                //DataExtension._serializableData.
+                bool errFlag = true;
+                try
+                {
+                    Logger.dbgLog("threadname: " + Thread.CurrentThread.Name);
+                    ourBytes = SaveDataUtils.ReadBytesFromNamedKey(UTSaveDataContainer.DefaultContainername);
+                    if (ourBytes == null || ourBytes.Length < 10) //ourheaderalone is like 1k.
+                    {
+                        Logger.dbgLog("We could not find our named byte array. No extra burningtree data to process");
+
+                        if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                        {
+                            int iCount = Singleton<SimulationManager>.instance.m_serializableDataStorage.Keys.Count();
+                            Logger.dbgLog("Curious: keycount==" + iCount.ToString());
+                            if (iCount > 0)
+                            {
+                                string[] thekeys = Singleton<SimulationManager>.instance.m_serializableDataStorage.Keys.ToArray();
+                                if (thekeys != null)
+                                {
+                                    for (int i = 0; i < thekeys.Length; i++)
+                                    {
+                                        Logger.dbgLog(string.Format("entry: key{0}  named: {1}", i.ToString(), thekeys[i].ToString()));
+                                    }
+                                }
+                            }
+                        }
+                        oMasterContainer.SaveFlags = 0;
+                        oMasterContainer.SaveType = 1; //flag empty.
+                        oMasterContainer.m_BurningTreeData = null;
+                        errFlag = true;
+                    }
+                    else
+                    {
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("We obtained our named data array of length:" + ourBytes.Length.ToString()); }
+                        errFlag = false;
+                    }
+
+                }
+                catch (Exception ldEx)
+                {
+                    Logger.dbgLog("Error loading save container byte data:", ldEx);
+                }
+
+                if (errFlag)
+                { return oMasterContainer; } //we have no data
+
+                try
+                {
+                    if (ourBytes != null && ourBytes.Length != 0)  //check again.
+                    {
+                        MemoryStream memoryStream = new MemoryStream();
+                        try
+                        {
+                            Logger.dbgLog("Loading our UTSaveDataContainer from bytes to objects!");
+                            //memoryStream = new MemoryStream();
+                            memoryStream.Write(ourBytes, 0, ourBytes.Length);
+                            memoryStream.Position = 0L;
+                            oMasterContainer = (UTSaveDataContainer)new BinaryFormatter().Deserialize(memoryStream);
+                            oMasterContainer.SaveType = 2;
+                            DataExtension.m_UTSaveDataContainer = oMasterContainer;
+                        }
+                        finally 
+                        {
+                            memoryStream.Close();
+                        }
+                    }
+                    else
+                    {
+                        Logger.dbgLog("No data to deserialize!");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.dbgLog (string.Format("Error deserializing SaveContainer data: ", ex));
+                    //flag = true;
+                }
+
+                return oMasterContainer; 
+ 
+            }
+
+            /// <summary>
+            /// This actually runs OnSave() // which gets fired off before Data.Deserialze gets called.
+            /// It handles all our tree data > 262144 if needed; Also packs and kicks off the packersavelist filling.
+            /// </summary>
             internal static void Serialize()
             {
                 if (!LimitTreeManager.Helper.UseModifiedTreeCap)
@@ -1128,15 +1301,33 @@ namespace TreeUnlimiter
                 TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
                 if (Loader.LastSaveList == null)
                 {
-                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Obtaining fresh PackedList"); }
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("LastSaveList==null Obtaining fresh PackedList"); }
                     Loader.LastSaveList = Packer.GetPackedList();
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("fresh PackedList assigned to Loader.LastSaveList "); }
+                }
+                else
+                {
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using Stale?? PackedList"); }
                 }
                 if (mBuffer.Length <= Mod.DEFAULT_TREE_COUNT || Loader.LastSaveList.Count <= Mod.DEFAULT_TREE_COUNT)
                 { 
-                    Logger.dbgLog("No extra tree data to save."); 
+                    Logger.dbgLog("No extra tree data to save.");
+                    if (Mod.DEBUG_LOG_ON)
+                    {
+                        Logger.dbgLog("Setting LastSaveUsedPacking = False. and returning and removing old data!");
+                    }
                     Loader.LastSaveUsedPacking = false;
+                    //1.6.0_build04 Bugfix for old data staying around 
+                    //case is if we had >262k saved and now we don't we can't bail without wipinging here.
+                    //or else we end up with "I deleted trees but they are back after save+reload!" problems.
+                    if (SaveDataUtils.EraseBytesFromNamedKey(Mod.MOD_OrgDataKEYNAME))
+                    { 
+                        Logger.dbgLog("We found and removed old data."); 
+                    }
+                    Loader.LastFileClearedFlag = true;
                     return; 
                 }
+                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Setting LastSaveUsedPacking = True."); }
                 Loader.LastSaveUsedPacking = true;
 
                 List<ushort> nums = new List<ushort>();
@@ -1159,8 +1350,8 @@ namespace TreeUnlimiter
 
                 int num = 0;
 
-                
                 //orignal
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("LastSaveUsedPacking: " + Loader.LastSaveUsedPacking.ToString() + " LastSaveList: " + (Loader.LastSaveList == null ? "null":"not null")); }
                 if (Loader.LastSaveUsedPacking == false | Loader.LastSaveList == null)
                 {
                     if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer.(no packing)"); }
@@ -1175,12 +1366,13 @@ namespace TreeUnlimiter
                             nums.Add((ushort)treeInstance.m_posX);
                             nums.Add((ushort)treeInstance.m_posZ);
                             num++;
+
                         }
                     }
                 }
                 else //use packing
                 {
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer.(packing)"); }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer. (packing) " + Loader.LastSaveList.Count.ToString()); }
 
                     for (int i = Mod.DEFAULT_TREE_COUNT; i < Loader.LastSaveList.Count; i++) //from top of thier range to ours.
                     {
@@ -1201,11 +1393,184 @@ namespace TreeUnlimiter
                 nums[9] = 0; //options
                 if (Loader.LastSaveUsedPacking) //add packed flag.
                 { nums[9] = (ushort)(nums[9] | (ushort)Helper.SaveFlags.packed); }
+
+                //TODO:Add some try catches around at least this call if not the above.
                 object[] treeLimit = new object[] { num, LimitTreeManager.Helper.TreeLimit - Mod.DEFAULT_TREE_COUNT, nums.Count * 2, Mod.CurrentFormatVersion.ToString() };
                 Logger.dbgLog(string.Format("Saving {0} of {1} in extra trees range, size in savegame approx: {2} bytes, saveformatverion:{3}", treeLimit));
                 Singleton<SimulationManager>.instance.m_serializableDataStorage["mabako/unlimiter"] = nums.SelectMany<ushort, byte>((ushort v) => BitConverter.GetBytes(v)).ToArray<byte>();
+
             }
+
+
+            //Runs Later then the Tress guy
+            //gets called during Data.Serialize()
+            /// <summary>
+            /// Our main wrapper function to handle the burning trees that are > 262k.
+            /// We have to see if packing was used, if so we must reorder burningtree_indexes based on their 
+            /// new data.  Then save all those > 262k up to Current Limit.
+            /// </summary>
+            internal static void SerializeBurningTreeWrapper()
+            {
+                //let's make sure we're enabled.
+                if (!LimitTreeManager.Helper.UseModifiedTreeCap)
+                {
+                    return;
+                }
+
+                FastList<TreeManager.BurningTree> tmbt;
+                FastList<TreeManager.BurningTree> tmbt2;
+                try
+                {
+                    Logger.dbgLog("fired; Loader.LastSaveUsedPacking = " + Loader.LastSaveUsedPacking.ToString());
+
+                    //triggering on lastfileclearFlag forces reordering and then should result in 0 trees and removal.
+                    //we have to avoid hitting the non-packer in that case because the direct copy from TM.
+                    //will copy from higher indexes.. vs copy from reordered packed list.
+                    //KH Build06 12/7- You know I don't even think we need the 'else' or my brain may just be fried atm. 
+                    if (Loader.LastSaveUsedPacking || Loader.LastFileClearedFlag )
+                    {
+                        //reorder based on LastSaveList of indexes. 
+                        //we technically have already done this before so we're duplicating
+                        //work unless you want to save those results in Loader.Something?? like LastSavedList? 
+                        Logger.dbgLog("LastSavedPacking True - Getting a reOrderedList using existing objLastSaveList");
+                        Packer.ReOrderBurningTrees(ref Loader.LastSaveList, out tmbt);
+
+                        //Now get list from that list copy that only includes 262k+
+                        Logger.dbgLog("LastSavedPacking True - Copying 262k to limit - from our re-ordered copy");
+                        tmbt2 = Packer.CopyBurningTreesList(ref tmbt, 2);
+                        SerializeExtraBurningTrees(true, tmbt2); //farm out the save details.
+
+                    }
+                    else //
+                    {
+                        //No need to reorder because we're not packed.
+                        //This basically shouldn't ever happen anymore unless something goes wildly wrong.
+                        //Now get list from **ORG TM copy** that only includes 262k+
+                        //In theory there shouldn't be any most cases I can think of.
+                        Logger.dbgLog("LastSavedPacking false and LastFileCleard not set - Copying 262k to limit -from original tree manager");
+                        tmbt2 = Packer.CopyBurningTreesList(ref Singleton<TreeManager>.instance.m_burningTrees, 2);
+                        SerializeExtraBurningTrees(false, tmbt2);  //farm out the save details.
+                    }
+                }
+
+                catch (Exception ex)
+                { Logger.dbgLog("Error during save of extra burning trees.",ex);}
+ 
+            }
+
+
+            /// <summary>
+            /// Handles Actual setup of object containers, and then the syncronized writes of the objects to the byte array.
+            /// </summary>
+            /// <param name="isPacked">IfPackingWasUsed on tree save process</param>
+            /// <param name="lstBurningTrees">The FastList of burning trees to actually try to save</param>
+            private static void SerializeExtraBurningTrees(bool isPacked,FastList<TreeManager.BurningTree> lstBurningTrees) 
+            {
+                if(Mod.DEBUG_LOG_ON)
+                {Logger.dbgLog("Serializing extra burning trees  " + (isPacked==true ? "(packed)":"(notpacked)"));}
+                try
+                {
+                    if (lstBurningTrees == null )
+                    {
+                        Logger.dbgLog("listBurningTrees is null, it at least should be empty!");
+                        Logger.dbgLog("We will abort the saving of burning data. and leave existing data in place.");
+                        //1.6.0 we should probably.. put this back when done testing 1.6.0.-f4_build05
+                        //SaveDataUtils.EraseBytesFromNamedKey(UTSaveDataContainer.DefaultContainername);
+                        return;
+                    }
+                    else if(lstBurningTrees.m_size < 1 || lstBurningTrees.m_buffer.Length == 0)
+                    {
+                        Logger.dbgLog("No extra burning data " + lstBurningTrees.m_size + " burning trees to save.");
+                        //Got to remove the old stuff if it exists.
+                        if (Mod.DEBUG_LOG_ON)
+                        {
+                            Logger.dbgLog(string.Format("will attempt to remove existing {0} container if exists",UTSaveDataContainer.DefaultContainername));
+                        }
+                        
+                        SaveDataUtils.EraseBytesFromNamedKey(UTSaveDataContainer.DefaultContainername); 
+                        Loader.LastFileClearedFlag = true; //sort of redundent since it was likely set above us.
+
+                        return;
+                    }
+                    
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                    {
+                        Logger.dbgLog("about to serialize extra " + lstBurningTrees.m_size + " burning trees");
+                    }
+
+                    //setup the container.
+                    UTSaveDataContainer toplevelContainer = new UTSaveDataContainer();
+                    toplevelContainer.ContainerName = UTSaveDataContainer.DefaultContainername.ToString(); 
+                    toplevelContainer.SaveFormatVersion = UTSaveDataContainer.CurrentSaveContainerFormatVersion;
+                    toplevelContainer.CreatedDate = DateTime.UtcNow;
+                    //setup the burningcontainer.
+                    toplevelContainer.m_BurningTreeData = new UTSaveDataContainer.BurningTreeData();
+                    if (isPacked)
+                    { 
+                        toplevelContainer.SaveFlags = 1; //packing used.
+                        toplevelContainer.m_BurningTreeData.isPacked = true;
+                    }
+
+                    UTSaveDataContainer.BurningTreeData BurningContainer = toplevelContainer.m_BurningTreeData;
+                    BurningContainer.SaveFormatVersion = UTSaveDataContainer.BurningTreeData.CurrentSaveBurningFormatVersion;
+                    BurningContainer.BurningCount = 0;
+
+                    List<UTSaveDataContainer.UTBurningTreeInstance> myBurningTreeList = new List<UTSaveDataContainer.UTBurningTreeInstance>(lstBurningTrees.m_size);
+
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                    { Logger.dbgLog("myburning list capacity is currently: " + myBurningTreeList.Capacity.ToString()); }
+
+                    UTSaveDataContainer.UTBurningTreeInstance oTree = new UTSaveDataContainer.UTBurningTreeInstance();
+                    //copy source data to our container.
+                    for (uint i = 0; i < lstBurningTrees.m_buffer.Length; i++)
+                    {
+                        if (lstBurningTrees.m_buffer[i].m_treeIndex > 0)
+                        {
+                            oTree.m_treeIndex = lstBurningTrees.m_buffer[i].m_treeIndex;
+                            oTree.m_fireIntensity = lstBurningTrees.m_buffer[i].m_fireIntensity;
+                            oTree.m_fireDamage = lstBurningTrees.m_buffer[i].m_fireDamage;
+                            oTree.idxWhenSaved = i;
+                            oTree.version = 1;
+                            myBurningTreeList.Add(oTree);
+                        }
+                    }
+                    BurningContainer.BurningTreeList = myBurningTreeList;
+                    BurningContainer.BurningCount = myBurningTreeList.Count;
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1){ Logger.dbgLog("about to save container with : " + myBurningTreeList.Count.ToString() + " burning trees."); }
+                    BinaryFormatter binaryFormatter = new BinaryFormatter();
+                    try
+                    {
+                        MemoryStream memoryStream = new MemoryStream();
+                        try
+                        {
+                            binaryFormatter.Serialize(memoryStream, toplevelContainer);
+                            memoryStream.Position = 0L;
+                            Logger.dbgLog(string.Format("Saving data, byte length: {0}  ContainerName: {1}", memoryStream.Length.ToString(), toplevelContainer.ContainerName));
+                            if (SaveDataUtils.WriteBytesToNamedKey(toplevelContainer.ContainerName, memoryStream.ToArray()) == false)
+                            { Logger.dbgLog("saving failed."); }
+                            //Singleton<SimulationManager>.instance.m_serializableDataStorage[toplevelContainer.ContainerName] = memoryStream.ToArray();
+                        }
+                        finally
+                        {
+                            memoryStream.Close();
+                        }
+                    }
+                    catch (Exception ex10)
+                    {
+                        Logger.dbgLog("Unexpected error while saving data: ", ex10);
+                    }
+
+                    //store this incase we need it.actually we will eventually just not in this version... yet 
+                    DataExtension.m_UTSaveDataContainer = toplevelContainer;
+
+                }
+                catch (Exception ex) { Logger.dbgLog("err: ",ex); } 
+
+            } 
+
         }
+
+
 
         internal class Data
         {
@@ -1217,8 +1582,7 @@ namespace TreeUnlimiter
             {
                 short num;
                 short num1;
-                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(" WTF11??"); }
-                //9-25-2015     if (Mod.DEBUG_LOG_ON){Debug.Log("[TreeUnlimiter::LimitTreeManager::Data:Deserialize()] calling Ensure Init");}
+                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Starting detoured deseralizer. Making sure we're initialized."); }
                 LimitTreeManager.Helper.EnsureInit(1);
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginDeserialize(s, "TreeManager");
                 TreeManager treeManager = Singleton<TreeManager>.instance;
@@ -1228,7 +1592,12 @@ namespace TreeUnlimiter
                 int num2 = Mod.DEFAULT_TREE_COUNT ;  //262144
                 int length = (int)mTreeGrid.Length;
                 treeManager.m_trees.ClearUnused();
-                treeManager.m_burningTrees.Clear();  //v1.6.0
+                treeManager.m_burningTrees.Clear();  //v1.6.0 c/o
+                //my personal addition because no sense in constant growth.
+                if ((treeManager.m_burningTrees.m_buffer == null) == false && treeManager.m_burningTrees.m_buffer.Length > 64) 
+                { treeManager.m_burningTrees.Trim(); }
+                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("m_burningTrees.Clear()'d and m_burningTrees.Trim()'d"); }
+
                 SimulationManager.UpdateMode mUpdateMode = Singleton<SimulationManager>.instance.m_metaData.m_updateMode;
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Concat(" mUpdatemode =", mUpdateMode.ToString())); }
                 bool flag = (mUpdateMode == SimulationManager.UpdateMode.NewAsset ? true : mUpdateMode == SimulationManager.UpdateMode.LoadAsset);
@@ -1239,7 +1608,10 @@ namespace TreeUnlimiter
                 EncodedArray.UShort num3 = EncodedArray.UShort.BeginRead(s);
                 for (int j = 1; j < num2; j++)
                 {
-                    mBuffer[j].m_flags = num3.Read();
+                    TreeInstance.Flags flags = (TreeInstance.Flags)num3.Read();
+                   // reverse any burning or damaged flags : CO wisely added in 1.6.0
+                    flags &= ~(TreeInstance.Flags.FireDamage | TreeInstance.Flags.Burning);
+                    mBuffer[j].m_flags = (ushort)flags;
                 }
                 num3.EndRead();
                 PrefabCollection<TreeInfo>.BeginDeserialize(s);
@@ -1279,22 +1651,17 @@ namespace TreeUnlimiter
                     mBuffer[m].m_posZ = num1;
                 }
                 num5.EndRead();
-                //go load our data if enabled.
-                if (LimitTreeManager.Helper.UseModifiedTreeCap)
-                {
-                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using ModifiedTreeCap - Calling Custom Deserializer."); }
-                    LimitTreeManager.CustomSerializer.Deserialize();
-                }
 
-                //shared
 
-                //added for 1.6.0 (buring trees)
+                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("main deserialize: Processed the core 262144k tree buffer, moving on to read in core burning trees"); }
+                //added for 1.6.0 (burning trees)
                 if (s.version >= 266)
                 {
-                    int numBuringTrees = (int)s.ReadUInt24();
-                    treeManager.m_burningTrees.EnsureCapacity(numBuringTrees);
+                    int numBurningTrees = (int)s.ReadUInt24();
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("main deserialize: There are " + numBurningTrees.ToString() + " burning trees stored in the file."); }
+                    treeManager.m_burningTrees.EnsureCapacity(numBurningTrees);
                     TreeManager.BurningTree burningTree = new TreeManager.BurningTree();
-                    for (int n = 0; n < numBuringTrees; n++)
+                    for (int n = 0; n < numBurningTrees; n++)
                     {
                         burningTree.m_treeIndex = s.ReadUInt24();
                         burningTree.m_fireIntensity = (byte)s.ReadUInt8();
@@ -1308,9 +1675,36 @@ namespace TreeUnlimiter
                                 mBuffer[burningTree.m_treeIndex].m_flags = (ushort)(mBuffer[burningTree.m_treeIndex].m_flags | 128);
                             }
                         }
+                        else
+                        {
+                            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("main deserialize: skipping burning tree with index " + burningTree.m_treeIndex.ToString()); }
+                        }
+
                     }
                 }
                 //end 1.6.0 additions
+
+
+                //go load our data if enabled.  //we load our burningtree in here too.
+                if (LimitTreeManager.Helper.UseModifiedTreeCap)
+                {
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using ModifiedTreeCap - Calling Custom Tree Deserializer."); }
+                    LimitTreeManager.CustomSerializer.Deserialize();
+                    if (s.version >= 266)
+                    {
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using ModifiedTreeCap - Calling Custom BurningTree Deserializer."); }
+                        LimitTreeManager.CustomSerializer.DeserializeBurningTrees();
+                    }
+                    else
+                    {
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("save version < 266 no need to load custom tree data. ver:" + s.version.ToString()); }
+                    }
+                }
+
+
+
+                //shared
+
 
                 for (int o = 1; o < LimitTreeManager.Helper.TreeLimit; o++)
                 {
@@ -1406,6 +1800,18 @@ namespace TreeUnlimiter
                 //orig int num = Mod.DEFAULT_TREE_COUNT ; //262144
                 try
                 {
+                    if (Mod.DEBUG_LOG_ON) 
+                    {
+                        if (Loader.LastSaveList == null)
+                        {
+                            Logger.dbgLog("debug: Loader.LastSaveList is == NULL before call to packer.serialize.");
+                        }
+                        else 
+                        {
+                            Logger.dbgLog("debug: Loader.LastSaveList is NOT NULL before call to packer.serialize.");
+                        }
+                    }
+                    Logger.dbgLog("threadname: " + Thread.CurrentThread.Name + "  calling packer " + DateTime.Now.ToString(Mod.DTMilli));
                     Packer.Serialize(ref Loader.LastSaveList, ref s);
                 }
                 catch (Exception ex)
@@ -1413,7 +1819,28 @@ namespace TreeUnlimiter
                     Logger.dbgLog("", ex, true);
                     Logger.dbgLog("** May have failed to save trees due to last exception inside packer.seralize.\n Please enable verbose logging option and make contact with author via Steam to help debug the problem.", ex, true);
                 }
-                //original
+
+                // I really don't know why but we had to move this code to DataExtentions
+                // I'm 90% sure because m_serializableStorge is already seralized by the time it gets
+                // to this code, which frankly makes no sense looking at CO's source
+                // since it shows it being saved last...after all data.serialize calls run 
+                // However maybe there is something I'm missing in about the co-routine.
+                //handle extra burning trees if any.
+
+                /*
+                try
+                {
+                    Logger.dbgLog("threadname: " + Thread.CurrentThread.Name + "  calling serializeburning " + DateTime.Now.ToString(Mod.DTMilli));
+                    CustomSerializer.SerializeBurningTreeWrapper();
+
+                }
+                catch (Exception ex)
+                {
+                    Logger.dbgLog("", ex, true);
+                }
+                */
+
+                //original code
                 /*
                 EncodedArray.UShort num1 = EncodedArray.UShort.BeginWrite(s);
                 for (int i = 1; i < num; i++)
@@ -1457,6 +1884,7 @@ namespace TreeUnlimiter
                 */ 
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
                 if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("replaced seralizer completed."); }
+                Loader.LastFileClearedFlag = false;
                 if (Loader.LastSaveList != null)
                 {
                     if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Cleaning up last save flags and list object."); }

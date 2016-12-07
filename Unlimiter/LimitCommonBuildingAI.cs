@@ -20,7 +20,7 @@ namespace TreeUnlimiter
         }
  */
         //redirect reverse this fucker.
-        [MethodImpl(MethodImplOptions.NoInlining)] //to prevent inlining]
+        [MethodImpl(MethodImplOptions.NoInlining)] //to prevent inlining
         private static void TrySpreadFire(Quad2 quad, float minY, float maxY, ushort buildingID, ref Building buildingData, InstanceManager.Group group)
         {
             //this should never get reached.

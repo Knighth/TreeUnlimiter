@@ -3,7 +3,6 @@ using ColossalFramework.IO;
 using ColossalFramework.Math;
 using ColossalFramework.Plugins;
 using ColossalFramework.Threading;
-//using ColossalFramework.Steamworks;
 using ICities;
 using System;
 using System.Collections.Generic;
@@ -18,12 +17,13 @@ namespace TreeUnlimiter
     public class Loader : LoadingExtensionBase
     {
         internal static bool LastSaveUsedPacking = false;
+        internal static bool LastFileClearedFlag = false;
         internal static List<int> LastSaveList;
         public Loader() {}
         public override void OnCreated(ILoading loading)
         {
-            
-            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnCreated fired."); }
+
+            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnCreated fired.  " + DateTime.Now.ToString(Mod.DTMilli)); }
             //It's useless to try and detect loadingmode here as the simmanager loading obj is empty on first start
             //and there after only contains the previous state at this stage, ie the prior map or assset or game.
             //it's fresh state gets updated sometime after OnCreated. Below both will fail with null obj.
@@ -152,9 +152,8 @@ namespace TreeUnlimiter
                     uint mtreebuffcount = TreeMgr.m_trees.ItemCount();
                     int mupdtreenum = TreeMgr.m_updatedTrees.Length;
                     int mburntreenum = TreeMgr.m_burningTrees.m_size;
-                    Logger.dbgLog("Debugging-TreeManager: treecount=" + mtreecountr.ToString() + " msize=" + mtreebuffsize.ToString() + " mbuffleg=" + mtreebuffleg.ToString() + " buffitemcount=" + mtreebuffcount.ToString() + " UpdatedTreesSize=" + mupdtreenum.ToString() + " burntrees=" + mburntreenum.ToString());
+                    Logger.dbgLog("Debugging-TreeManager: treecount=" + mtreecountr.ToString() + " msize=" + mtreebuffsize.ToString() + " mbuffleg=" + mtreebuffleg.ToString() + " buffitemcount=" + mtreebuffcount.ToString() + " UpdatedTreesSize=" + mupdtreenum.ToString() + " burntrees=" + mburntreenum.ToString() +"\r\n");
                     //Debug.Log("[TreeUnlimiter:OnLevelLoaded]  Done. ModStatus: " + Mod.IsEnabled.ToString() + "    RedirectStatus: " + Mod.IsSetupActive.ToString());
-                    
                 }
             }
 
@@ -174,6 +173,7 @@ namespace TreeUnlimiter
                 {
                     if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnLevelUnloading()"); }
                     ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT);  //rebuild to org values seems to solve problem of mapeditor retaining prior map trees.
+                    Loader.LastFileClearedFlag = false;
                     if (LastSaveList != null)
                     { LastSaveList.Clear(); LastSaveList.Capacity = 1; LastSaveList = null; }
                 }
@@ -182,13 +182,14 @@ namespace TreeUnlimiter
             {
                 Logger.dbgLog("Error: ",ex,true);
             }
+            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) {Logger.dbgLog("\r\n"); } //crlf easier on eyes.
             base.OnLevelUnloading();
         }
 
 
         public override void OnReleased()
         {
-            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnReleased()"); }
+            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnReleased()\r\n"); }
 
             if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
             {

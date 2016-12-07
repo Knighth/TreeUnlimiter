@@ -17,6 +17,7 @@ namespace TreeUnlimiter
         public TreePrefabsDebug.NullTreeOptions NullTreeOptionsValue = TreePrefabsDebug.NullTreeOptions.DoNothing;
         public int NullTreeOptionsIndex = 0;
         public bool EmergencyOnly_RemoveAllTrees = false;
+        public bool ExtraLogDataChecked = false;
 
 
         public static void ValidateConfig(ref Configuration theconfig)

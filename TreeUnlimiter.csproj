@@ -94,7 +94,10 @@
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Unlimiter\Packer.cs" />
+    <Compile Include="Unlimiter\SaveDataUtils.cs" />
     <Compile Include="Unlimiter\TreePrefabsDebug.cs" />
+    <Compile Include="Unlimiter\UTDebugUtils.cs" />
+    <Compile Include="Unlimiter\UTSaveDataContainer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

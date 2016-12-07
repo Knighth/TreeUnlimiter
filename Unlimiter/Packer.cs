@@ -6,21 +6,147 @@ using System.Text;
 using ColossalFramework;
 using ColossalFramework.IO;
 using UnityEngine;
+using System.Diagnostics;
+using System.Threading;
 
 namespace TreeUnlimiter
 {
 	static class Packer
 	{
 
+        static private Stopwatch m_PerfMonitor = new Stopwatch();
+
+        public static FastList<TreeManager.BurningTree> CopyBurningTreesList(ref FastList<TreeManager.BurningTree> orgBurningList,byte bCopyFlag)
+        {
+            FastList<TreeManager.BurningTree> newlist = new FastList<TreeManager.BurningTree>();
+            newlist.Clear();
+            try
+            {
+                if (orgBurningList != null)
+                {
+
+                    int orgcount = orgBurningList.m_size;
+                    newlist.EnsureCapacity(orgcount);
+                    TreeManager.BurningTree tmpTree = new TreeManager.BurningTree();
+
+                    int tmpcounter = 0;
+                    int MinValue = 0;
+                    int MaxValue = 0;
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("CopyFlag = " + bCopyFlag.ToString()); }
+                    switch (bCopyFlag)
+                    {
+                        //0-262144 mainserialze()
+                        case 1: 
+                            MinValue = 0;
+                            MaxValue = Mod.DEFAULT_TREE_COUNT;
+                            break;
+                        //262144 to activelimit  customserialze( not packed)
+                        case 2: 
+                            MinValue = Mod.DEFAULT_TREE_COUNT;
+                            MaxValue = LimitTreeManager.Helper.TreeLimit;
+                            break;
+                        //262144 to lastsavecount.count customseralize(packed)???
+                        case 3:
+                            MinValue = Mod.DEFAULT_TREE_COUNT;
+                            MaxValue = Loader.LastSaveList.Count;
+                            break;
+                        //just copy all of them.
+                        default:
+                            MinValue = 0;
+                            MaxValue = LimitTreeManager.Helper.TreeLimit;
+                            break;
+                    }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) 
+                    { Logger.dbgLog(string.Concat("copying from: ", MinValue.ToString(), " to ",MaxValue.ToString())); }
+
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) 
+                    { m_PerfMonitor.Reset(); m_PerfMonitor.Start(); }
+                    
+                    foreach (TreeManager.BurningTree orgTree in orgBurningList)
+                    {
+                        if (orgTree.m_treeIndex > 0 && (orgTree.m_treeIndex >= MinValue & orgTree.m_treeIndex < MaxValue))
+                        {
+                            //copy tree
+                            tmpTree.m_treeIndex = orgTree.m_treeIndex;
+                            tmpTree.m_fireDamage = orgTree.m_fireDamage;
+                            tmpTree.m_fireIntensity = orgTree.m_fireIntensity;
+                            newlist.Add(tmpTree);
+                            tmpcounter++;
+                        }
+                    }
+                    newlist.Trim();
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { m_PerfMonitor.Stop(); Logger.dbgLog(string.Concat("Copy time took (ticks):", m_PerfMonitor.ElapsedTicks.ToString())); }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) {Logger.dbgLog(string.Concat("orgCount(m_size):",orgcount.ToString()," copycount:",tmpcounter.ToString()) + " new_msize:" + newlist.m_size.ToString() ); }
+                }
+                else 
+                {
+                    Logger.dbgLog("orgBurningList is Null!");
+                    return newlist;
+                }
+            }
+            catch (Exception ex)
+            { Logger.dbgLog(ex.ToString()); }
+
+            return newlist;
+ 
+        }
+
+/*
         /// <summary>
-        /// Feed it a packed list it will filter throught he buringtree's buffer
+        /// It's complicated.
+        /// </summary>
+        /// <param name="idxReorderedList"></param>
+        /// <param name="sourceBuringTrees"></param>
+        /// <param name="lowerBurning"></param>
+        /// <param name="upperBurning"></param>
+        /// <returns></returns>
+        /// 
+        public static int FilterBurningTreeList(ref List<int> idxReorderedList, ref FastList<TreeManager.BurningTree> sourceBuringTrees, out FastList<TreeManager.BurningTree> lowerBurning, out FastList<TreeManager.BurningTree> upperBurning)
+        {
+            int retvalue = 0;
+
+            lowerBurning = new FastList<TreeManager.BurningTree>();
+            upperBurning = new FastList<TreeManager.BurningTree>();
+            try 
+            {
+                if (sourceBuringTrees != null)
+                {
+                    lowerBurning = CopyBuringTreesList(ref sourceBuringTrees, 1);
+                    upperBurning = CopyBuringTreesList(ref sourceBuringTrees, 2);
+                    TreeManager.BurningTree tmptree = new TreeManager.BurningTree();
+                    foreach(int tmpInt in idxReorderedList )
+                    {
+
+                    }
+                    for (int i = 0; i < sourceBuringTrees.m_buffer.Length;i++ )
+                    {
+
+                    }
+                    
+                }
+                else
+                { Logger.dbgLog("sourceBuringTrees is null! wtf?"); }
+
+            }
+            catch (Exception ex)
+            { Logger.dbgLog(ex.ToString()); }
+
+            return retvalue;
+        }
+*/
+
+
+        /// <summary>
+        /// Feed it a packed list it will filter throught he burningtree's buffer
         /// and change old indexes to match what 99.99% of the time should be the
-        /// index when deserialised. Only needed when 'packing' is used.
+        /// packed index when deserialised. Only needed when 'packing' is used.
+        /// Works on TreeManager.m_burningtress but returns a COPY not the original.
         /// </summary>
         /// <param name="orgindex">a 'packed' list of tree indexes</param>
-        /// <returns></returns>
-        public static int ReOrderBuringTrees(List<int> orgindex)
+        /// <returns>(int) number of indexes reordered </returns>
+        public static int ReOrderBurningTrees(ref List<int> orgindex,out FastList<TreeManager.BurningTree> tmburning)
         {
+            tmburning = new FastList<TreeManager.BurningTree>();
             int reordered = 0;
             if (orgindex == null || orgindex.Count < 2) 
             {
@@ -28,11 +154,20 @@ namespace TreeUnlimiter
                 { Logger.dbgLog("orgindex was null or < 2; during call. aborting reorder;");}
                 return 0; 
             }
-            FastList<TreeManager.BurningTree> tmburning = Singleton<TreeManager>.instance.m_burningTrees;
+
+            //copies ALL
+            //kr 12.2... wtf we're modifiying m_burningtrees live?
+            //shouldn't we be making a copy and fucking with that one?
+            //go get a copy from original that includes all valid burning trees 0 to whatever.
+            tmburning = CopyBurningTreesList(ref Singleton<TreeManager>.instance.m_burningTrees, 0);
             try
             {
+
                 if (tmburning.m_size > 0 )
                 {
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                    { Logger.dbgLog(string.Format("reorder will filter though {0} trees, looking for matches to reorder in {1} burning trees",tmburning.m_size.ToString(),orgindex.Count.ToString())); }
+                    object[] logstring;
                     for (int i = 1; i < orgindex.Count; i++)
                     {
                         //int oidx = orgindex[i];  //why do an assignment everytime?
@@ -40,10 +175,10 @@ namespace TreeUnlimiter
                         {
                             if (tmburning.m_buffer[j].m_treeIndex == orgindex[i])
                             {
-                                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 2)
                                 {
-                                    object[] logstring = new object[] { tmburning.m_buffer[j].m_treeIndex.ToString(), orgindex[i].ToString(), i.ToString() };
-                                    Logger.dbgLog(string.Format("matched buring: {0} == orgidx: {1}  reassigned: {2}", logstring));
+                                    logstring = new object[] { tmburning.m_buffer[j].m_treeIndex.ToString(), orgindex[i].ToString(), i.ToString(),j.ToString(),(orgindex[i] == i) ? " same":" changed"};
+                                    Logger.dbgLog(string.Format("matched burning: {0} == orgidx: {1}  reassigned: {2} status: {4} orgburnidx: {3}", logstring));
                                 }
                                 tmburning.m_buffer[j].m_treeIndex = (uint)i;
                                 reordered++;
@@ -56,12 +191,12 @@ namespace TreeUnlimiter
                 else
                 {
                     if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
-                    { Logger.dbgLog("No burning trees to reorder or orgindex was < 2, skipping."); }
+                    { Logger.dbgLog("No burning trees to reorder or tmburning.m_size was < 1, skipping."); }
                 }
             }
             catch (Exception ex)
             { Logger.dbgLog("", ex, true); }
-
+            if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Number of reordered trees: " + reordered.ToString()); }
             return reordered;
         }
 
@@ -114,6 +249,7 @@ namespace TreeUnlimiter
                 { Logger.dbgLog("idxlist is null. lastsaveusedpacking: " + Loader.LastSaveUsedPacking.ToString()); }
                 else
                 { Logger.dbgLog("idxlist count: " + idxList.Count + " lastsaveusedpacking: " + Loader.LastSaveUsedPacking.ToString()); }
+                Logger.dbgLog("threadname: " + Thread.CurrentThread.Name);
             }
 
             TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
@@ -127,6 +263,8 @@ namespace TreeUnlimiter
                 if (Mod.DEBUG_LOG_ON && idxList.Count < 262144) 
                 { Logger.dbgLog(string.Format("tree seralizer will serialize first {0} trees then dummy up the rest.",idxList.Count)); }
                 Loader.LastSaveUsedPacking = true;
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Loader.LastSaveUsedPacking now set to True."); }
+
                 EncodedArray.UShort num1 = EncodedArray.UShort.BeginWrite(s);
 
                 //remember idxlist index entry 0 is also zeroed'd to account for treebuffer starting at 1 not 0)
@@ -204,18 +342,51 @@ namespace TreeUnlimiter
                 num3.EndWrite();
 
                 //reorder if neccessary
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("reordering burning trees indexes for our seralizer. (packed)"); }
+
                 if ((uint)tmburning.m_size > 0)
-                { 
-                    int retval = ReOrderBuringTrees(idxList); 
-                }
-                s.WriteUInt24((uint)tmburning.m_size);
-                for (int m = 0; m < tmburning.m_size; m++)
                 {
-                    s.WriteUInt24(tmburning.m_buffer[m].m_treeIndex);
-                    s.WriteUInt8(tmburning.m_buffer[m].m_fireIntensity);
-                    s.WriteUInt8(tmburning.m_buffer[m].m_fireDamage);
+                    FastList<TreeManager.BurningTree> returnedMatchingBurnList;
+                    int retval = ReOrderBurningTrees(ref idxList, out returnedMatchingBurnList);
+                    FastList<TreeManager.BurningTree> orgBurningTrees; //used below holds tmp copy of burningtrees;
+
+                    //we only need burning tress with indexes < 262144k.
+                    orgBurningTrees = CopyBurningTreesList(ref returnedMatchingBurnList, 1);
+                    //create 2  fastlists of burning trees from idxlist
+                    //one with indexes 0 -> 262143  one with indexes > 262144
+                    //save 0-262k list as usual
+                    //save 262k+ list to our own storage devices via customer serializer class that gets called before this.
+
+                    if(orgBurningTrees ==null)
+                    {
+                        Logger.dbgLog("orgBurningTrees is null, copyburningtrees retuned null array.");
+                        orgBurningTrees = new FastList<TreeManager.BurningTree>();
+                        Logger.dbgLog("We dummied up a fake 0 count one.");
+                    }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Adjusted burning trees for our seralizer.(packed-reorderedlist)"); }
+                    //
+                    s.WriteUInt24((uint)orgBurningTrees.m_size);
+                    for (int m = 0; m < orgBurningTrees.m_size; m++)
+                    {
+                        s.WriteUInt24(orgBurningTrees.m_buffer[m].m_treeIndex);
+                        s.WriteUInt8(orgBurningTrees.m_buffer[m].m_fireIntensity);
+                        s.WriteUInt8(orgBurningTrees.m_buffer[m].m_fireDamage);
+                    }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + orgBurningTrees.m_size.ToString() + " packed burning trees"); }
                 }
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + "buring trees"); }
+                else
+                {
+                    //There are supposedly no burningtree so just exec the original code untouched.
+                    //org
+                    s.WriteUInt24((uint)tmburning.m_size);
+                    for (int m = 0; m < tmburning.m_size; m++)
+                    {
+                        s.WriteUInt24(tmburning.m_buffer[m].m_treeIndex);
+                        s.WriteUInt8(tmburning.m_buffer[m].m_fireIntensity);
+                        s.WriteUInt8(tmburning.m_buffer[m].m_fireDamage);
+                    }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + " org burning trees (pack but empty)"); }
+                }
 
                 if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using packer seralizer."); }
 
@@ -223,7 +394,9 @@ namespace TreeUnlimiter
 
             else //use original.
             {
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("idxList was Null or idxList.Count was < 2"); }
                 if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using original seralizer."); }
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Loader.LastSaveUsedPacking state = " + Loader.LastSaveUsedPacking.ToString()); }
                 EncodedArray.UShort num1 = EncodedArray.UShort.BeginWrite(s);
                 for (int i = 1; i < num; i++)
                 {
@@ -265,15 +438,50 @@ namespace TreeUnlimiter
                 }
                 num3.EndWrite();
 
-                s.WriteUInt24((uint)tmburning.m_size);
-                for (int m = 0; m < tmburning.m_size; m++)
-                {
-                    s.WriteUInt24(tmburning.m_buffer[m].m_treeIndex);
-                    s.WriteUInt8(tmburning.m_buffer[m].m_fireIntensity);
-                    s.WriteUInt8(tmburning.m_buffer[m].m_fireDamage);
-                }
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Adjusting burning trees for original seralizer."); }
+                //12-4 KH - you know we could ecapsilate this with above.
+                // save some code, for now leaving it though.
 
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using original seralizer."); }
+                //Since we are not packing we don't need to reorder, but we do 
+                //need just trees < 262144k
+
+                //we feed it the real TreeManager.burningtrees. get back 0-262k
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("No reordering of trees indexes used."); }
+                if (tmburning.m_size > 0)
+                {
+                    FastList<TreeManager.BurningTree> orgBurningTrees2; //used below holds tmp copy of burningtrees;
+                    orgBurningTrees2 = CopyBurningTreesList(ref tmburning, 1);
+
+                    if (orgBurningTrees2 != null)
+                    { 
+                        Logger.dbgLog("orgBurningTrees2 is null, copyburning returned null? Dummy up new one don't save burning"); 
+                        orgBurningTrees2 = new FastList<TreeManager.BurningTree>();
+                    }
+
+                    s.WriteUInt24((uint)orgBurningTrees2.m_size);
+                    for (int m = 0; m < orgBurningTrees2.m_size; m++)
+                    {
+                        s.WriteUInt24(orgBurningTrees2.m_buffer[m].m_treeIndex);
+                        s.WriteUInt8(orgBurningTrees2.m_buffer[m].m_fireIntensity);
+                        s.WriteUInt8(orgBurningTrees2.m_buffer[m].m_fireDamage);
+                    }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + orgBurningTrees2.m_size.ToString() + " org burning trees"); }
+
+                }
+                else 
+                {
+                    //use real original cause it' empty anyway?
+                    s.WriteUInt24((uint)tmburning.m_size);
+                    for (int m = 0; m < tmburning.m_size; m++)
+                    {
+                        s.WriteUInt24(tmburning.m_buffer[m].m_treeIndex);
+                        s.WriteUInt8(tmburning.m_buffer[m].m_fireIntensity);
+                        s.WriteUInt8(tmburning.m_buffer[m].m_fireDamage);
+                    }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + " org burning trees (org empty)"); }
+                }
+                
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using original seralizer." + DateTime.Now.ToString(Mod.DTMilli)); }
             }
            // Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
         }
@@ -295,7 +503,9 @@ namespace TreeUnlimiter
         public void Serialize(DataSerializer s)
         {
             if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
-            { Logger.dbgLog("Fake serialize from " + startIndex.ToString() + " to " + idxList.Count.ToString()); }
+            { 
+                Logger.dbgLog("Fake serialize from " + startIndex.ToString() + " to " + idxList.Count.ToString());
+            }
 
             // Setup a dummy PrefabCollection<TreeInfo>.m_encodedArray so that we can continue refcounting.
             FieldInfo encoderField = typeof(PrefabCollection<TreeInfo>).GetField("m_encodedArray", BindingFlags.NonPublic | BindingFlags.Static);
