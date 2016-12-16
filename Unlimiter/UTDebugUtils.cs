@@ -140,47 +140,48 @@ namespace TreeUnlimiter
         { 
         }
 
-        public static void DumpHelicopters()
-        { 
-            //dump choppers ..specifically firecopterAI ones.. 
-            //do these have refferences to TM.burning buffer[x] somehow?
-            int thecounter = 0;
-            int thecounter2 = 0;
-            try
-            {
-                Logger.dbgLog("\r\n---Dumping Helcopters---\r\n");
-                VehicleManager vm = Singleton<VehicleManager>.instance;
-                Vehicle.Flags vFlags;
-                Vehicle v;
-                object logobj;
-                for (int i = 0; i < vm.m_vehicles.m_buffer.Length; i++)
-                {
-                    vFlags = vm.m_vehicles.m_buffer[i].m_flags;
-                    if ((vFlags & Vehicle.Flags.Created) == Vehicle.Flags.Created)
-                    {
-                        thecounter++;
-                        v = vm.m_vehicles.m_buffer[i];
-                        if (v.m_infoIndex > 0)
-                        {
-                            VehicleInfo vi = v.Info;
-                            if (vi != null)
-                            {
-                                if ((vi.m_vehicleType & VehicleInfo.VehicleType.Helicopter) == vi.m_vehicleType)
-                                {
-                                    logobj = new object[] { i.ToString(), v.m_flags.ToString(), v.m_sourceBuilding.ToString(), v.m_targetBuilding.ToString(), v.m_transferType.ToString(), vi.name.ToString(), v.m_transferSize.ToString() };
-                                    Logger.dbgLog(string.Format("vIdx:{0} flags:{1}  m_source:{2} m_target:{3} xfertype:{4} xfersize:{6} name={5}",logobj));
-                                    thecounter2++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            { Logger.dbgLog("Error: " + thecounter.ToString(), ex); }
-            Logger.dbgLog("Processed " + thecounter.ToString() + " number of vecs number logged: " + thecounter2.ToString()); 
+        //Don't really need this anymore.
+        //public static void DumpHelicopters()
+        //{ 
+        //    //dump choppers ..specifically firecopterAI ones.. 
+        //    //do these have refferences to TM.burning buffer[x] somehow?
+        //    int thecounter = 0;
+        //    int thecounter2 = 0;
+        //    try
+        //    {
+        //        Logger.dbgLog("\r\n---Dumping Helcopters---\r\n");
+        //        VehicleManager vm = Singleton<VehicleManager>.instance;
+        //        Vehicle.Flags vFlags;
+        //        Vehicle v;
+        //        object logobj;
+        //        for (int i = 0; i < vm.m_vehicles.m_buffer.Length; i++)
+        //        {
+        //            vFlags = vm.m_vehicles.m_buffer[i].m_flags;
+        //            if ((vFlags & Vehicle.Flags.Created) == Vehicle.Flags.Created)
+        //            {
+        //                thecounter++;
+        //                v = vm.m_vehicles.m_buffer[i];
+        //                if (v.m_infoIndex > 0)
+        //                {
+        //                    VehicleInfo vi = v.Info;
+        //                    if (vi != null)
+        //                    {
+        //                        if ((vi.m_vehicleType & VehicleInfo.VehicleType.Helicopter) == vi.m_vehicleType)
+        //                        {
+        //                            logobj = new object[] { i.ToString(), v.m_flags.ToString(), v.m_sourceBuilding.ToString(), v.m_targetBuilding.ToString(), v.m_transferType.ToString(), vi.name.ToString(), v.m_transferSize.ToString() };
+        //                            Logger.dbgLog(string.Format("vIdx:{0} flags:{1}  m_source:{2} m_target:{3} xfertype:{4} xfersize:{6} name={5}",logobj));
+        //                            thecounter2++;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    { Logger.dbgLog("Error: " + thecounter.ToString(), ex); }
+        //    Logger.dbgLog("Processed " + thecounter.ToString() + " number of vecs number logged: " + thecounter2.ToString()); 
 
-        }
+        //}
 
         //Randomize fire fighting more?
       //  public static void ReOrderBurnTreeListToSource(FastList<TreeManager.BurningTree> SourceList, List<BurningReorderEntry> MatchingTableList, out FastList<TreeManager.BurningTree> ResultingList)

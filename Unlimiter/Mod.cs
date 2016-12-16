@@ -17,7 +17,7 @@ namespace TreeUnlimiter
     {
         internal const ulong MOD_WORKSHOPID = 455403039uL;
         internal const string MOD_OFFICIAL_NAME = "Unlimited Trees Mod";
-        internal const string VERSION_BUILD_NUMBER = "1.0.6.0-f4 build_006";
+        internal const string VERSION_BUILD_NUMBER = "1.0.6.1-f2 build_007";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
         internal const string CURRENTMAXTREES_FORMATTEXT = "ScaleFactor: {0}   Maximum trees: {1}";
@@ -37,6 +37,7 @@ namespace TreeUnlimiter
         public static bool IsEnabled = false;
         public static bool IsInited = false;
         public static bool IsSetupActive = false;
+        public static bool IsGhostMode = false;
         public static bool DEBUG_LOG_ON = false;
         public static byte DEBUG_LOG_LEVEL = 0;
         public static bool USE_NO_WINDEFFECTS = false;
@@ -45,6 +46,7 @@ namespace TreeUnlimiter
         public static Configuration config;
         private static UILabel maxTreeLabel; //stores ref to last generated option panel uilabel for maxtrees#.
         internal static UISlider maxTreeSlider; //stores ref to laste generated option panel slider for treescale setting.
+        internal static UICheckBox GhostModechkbox; //stores ref to this label, need it to disable it if in-game. 
 
 
         public string Name
@@ -113,6 +115,7 @@ namespace TreeUnlimiter
                 {
                     isFirstInit = false; // our very first load flag 
                 }
+
             }
             catch(Exception ex)
             { Logger.dbgLog("", ex, true); }
@@ -159,6 +162,7 @@ namespace TreeUnlimiter
 
                     Logger.dbgLog(string.Concat("v", VERSION_BUILD_NUMBER, " Mod has been unloaded, disabled or game exiting."));
                 }
+
             }
             catch (Exception ex)
             { Logger.dbgLog("", ex, true); }
@@ -221,6 +225,7 @@ namespace TreeUnlimiter
                     config.EmergencyOnly_RemoveAllTrees = false;
                     config.UseCustomLogFile = false;
                     config.ExtraLogDataChecked = false;
+                    config.GhostModeEnabled = false;
                     Configuration.Serialize(MOD_CONFIGPATH, config);
                     if (DEBUG_LOG_ON) { Logger.dbgLog("New configuation file created."); }
                 }
@@ -229,6 +234,7 @@ namespace TreeUnlimiter
                     Configuration.ValidateConfig(ref config);
                     DEBUG_LOG_ON = config.DebugLogging;
                     DEBUG_LOG_LEVEL = config.DebugLoggingLevel;
+                    IsGhostMode = config.GhostModeEnabled;
                     USE_NO_WINDEFFECTS = config.UseNoWindEffects;
                     UpdateScaleFactors();
                 }
@@ -333,15 +339,29 @@ namespace TreeUnlimiter
             {
                 if (config.DebugLogging)
                 {
-                    LoggingChecked(true);
+                    LoggingChecked(true); 
                 }
                 else //should not be the case but..
                 {
                     Mod.DEBUG_LOG_LEVEL = 0;
-                    LoggingChecked(false);
+                    LoggingChecked(false); 
                 }
             }
             Configuration.Serialize(MOD_CONFIGPATH, Mod.config);
+        }
+
+        private void OnToggleGhostMode(bool en)
+        {
+            try
+            {
+                if (en)
+                { IsGhostMode = true; config.GhostModeEnabled = true; }
+                else
+                { IsGhostMode = false; config.GhostModeEnabled = false; }
+                Configuration.Serialize(MOD_CONFIGPATH, Mod.config);
+            }
+            catch (Exception ex)
+            { Logger.dbgLog("", ex); }
         }
 
         private void OnDumpAllBurningTrees()
@@ -353,15 +373,8 @@ namespace TreeUnlimiter
             catch (Exception ex)
             { Logger.dbgLog("", ex); }
         }
-        private void OnDumpHelicopters()
-        {
-            try
-            {
-                UTDebugUtils.DumpHelicopters();
-            }
-            catch (Exception ex)
-            { Logger.dbgLog("", ex); }
-        }
+
+
         private void ClearAllBurningDamaged()
         {
             try
@@ -377,7 +390,7 @@ namespace TreeUnlimiter
             try
             {
                 SaveDataUtils.EraseBytesFromNamedKey(Mod.MOD_OrgDataKEYNAME); // "mabako/unlimiter" 
-                SaveDataUtils.EraseBytesFromNamedKey(UTSaveDataContainer.DefaultContainername);
+                SaveDataUtils.EraseBytesFromNamedKey(UTSaveDataContainer.DefaultContainername); //"KH_UnlimitedTrees_v1_0"
             }
             catch (Exception ex)
             { Logger.dbgLog("", ex); }
@@ -401,6 +414,17 @@ namespace TreeUnlimiter
             { Logger.dbgLog("", ex); }
         }
 
+        private void OnListAllCustomDataInFile()
+        {
+            try
+            {
+                SaveDataUtils.ListDataKeysToLog();
+            }
+            catch (Exception ex)
+            { Logger.dbgLog("", ex); }
+
+        }
+
 
         /// <summary>
         /// Called by game upon user entering options screen.
@@ -419,11 +443,11 @@ namespace TreeUnlimiter
                     if (SMgr != null && SMgr.m_metaData != null)
                     {
                         tmpUpdateMode = SMgr.m_metaData.m_updateMode;
-                        Logger.dbgLog("updatemode: " + SMgr.m_metaData.m_updateMode.ToString());
+                        Logger.dbgLog("lastupdatemode: " + SMgr.m_metaData.m_updateMode.ToString());
                     }
                     else
                     {
-                        Logger.dbgLog("updatemode: null or simmanager null");
+                        Logger.dbgLog("lastupdatemode: null or simmanager null");
                     }
  
                 }
@@ -447,16 +471,17 @@ namespace TreeUnlimiter
                 uIHelperBase.AddDropdown("In case of tree errors:", sOptions, config.NullTreeOptionsIndex, NullTreeOptionsChanged);
                 uIHelperBase.AddCheckbox("Enable Seperate Log", config.UseCustomLogFile, new OnCheckChanged(SeperateLogChecked));
                 uIHelperBase.AddCheckbox("Enable Dev Level Logging", config.ExtraLogDataChecked, new OnCheckChanged(ExtraLogDataChecked));
+                GhostModechkbox = (UICheckBox)uIHelperBase.AddCheckbox("Enable Ghost Mode", config.GhostModeEnabled, OnToggleGhostMode);
 
                 if (DEBUG_LOG_ON & DEBUG_LOG_LEVEL > 1)
                 {
                     UIHelperBase uIHelperBase2 = helper.AddGroup("In-Game-Only Debug Functions (Not meant for users)");
 
                     uIHelperBase2.AddButton("dmp allburningtrees", new OnButtonClicked(OnDumpAllBurningTrees));
-                    uIHelperBase2.AddButton("dmp helicopters", new OnButtonClicked(OnDumpHelicopters));
                     uIHelperBase2.AddButton("ResetAllBurningTrees", new OnButtonClicked(ClearAllBurningDamaged));
                     uIHelperBase2.AddButton("ClearAllOurSaveDataFromThisFile", new OnButtonClicked(ClearAllSaveDataFromFile));
-                    uIHelperBase2.AddTextfield("dbglevel:",Mod.DEBUG_LOG_LEVEL.ToString(),new OnTextChanged(OnDbgLevelTextChanged),new OnTextSubmitted(OnDbgLevelTextSubmit));
+                    uIHelperBase2.AddButton("List all custom data to log", OnListAllCustomDataInFile);
+                    uIHelperBase2.AddTextfield("dbglevel:", Mod.DEBUG_LOG_LEVEL.ToString(), new OnTextChanged(OnDbgLevelTextChanged), new OnTextSubmitted(OnDbgLevelTextSubmit));
                 }
 
                 GenerateMaxTreeSliderandLablel(ref uIHelperBase, ref panel);
@@ -471,12 +496,14 @@ namespace TreeUnlimiter
         {
             if (oUIHelperBase != null && oPanel !=null)
             {
-                oUIHelperBase.AddSlider("Max # of trees scaling factor", 4.0f, 8.0f, 1.0f, (float)config.ScaleFactor, OnScaleFactorChange);
+                UISlider sld;
+                sld = (UISlider)oUIHelperBase.AddSlider("Max # of trees scaling factor", 4.0f, 8.0f, 1.0f, (float)config.ScaleFactor, OnScaleFactorChange);
                 oUIHelperBase.AddSpace(60);
-                UISlider sld = oPanel.Find<UISlider>("Slider");
+                //UISlider sld = oPanel.Find<UISlider>("Slider");
                 if (sld != null)
                 {
                     maxTreeSlider = sld;  //store so onlevelloaded can hide it.
+                    maxTreeSlider.disabledColor = new Color32(180, 180, 180, 255);
                     oPanel.autoLayout = false;
                     maxTreeLabel = oPanel.AddUIComponent<UILabel>();
                     maxTreeLabel.name = "CurrentMaxTrees";
@@ -546,6 +573,9 @@ namespace TreeUnlimiter
                                 break;
                             case "Enable Dev Level Logging":
                                 cbx[i].tooltip = "Enables logging of much more information to your log file\n Recommended only if you are having problems and someone\nhas asked you to enable it\nprobably in combination with custom log option.";
+                                break;
+                            case "Enable Ghost Mode":
+                                cbx[i].tooltip = "(advanced) Enables Mod to stay active but act like it's not, ignoring 'extra' UT tree data during load.\n This mode only exists to allow you to load a map that has 'extra' UT data WITHOUT actually loading that data the game will act as if UT is not loaded.\n For your own safety you can not change this setting in-game.";
                                 break;
                             default:
                                 break;

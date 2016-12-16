@@ -4,9 +4,154 @@ Installation Reminder: in your \steamapps folder locate the folder
 steam workshop update.
 
 
+Todo:
 
-**ChangeLog**
+    
+ + place or two where I think I can avoid makavo's original detouring or reflection and just
+   use "reverse - redirects". Need to play around with if after 1.6.1 bakes for awhile.
+ + Address the new log exceptions on quiting game from in-game.
+ 
+
+**ChangeLog \ DevNotes**
 -----------------------
+
+12-15-2016 v1.6.1-f2 build_007
+ ~ Minor tweaks in some log messages, add timestamp with miliseconds in a few spots and
+   some minor formating\workind tweaks.
+
+ ~ removed a couple lines of debugging stuff (helicopters); added ability to dump custom
+  data indexes and 'byte' sizes to log in the lower debug menu.  Makes being able to get
+  
+
+ + Added ghost mode. Should allow mod to now operate while 'active' but not actually
+   do anything. IE keep tree limit at 262k and not load or save our extra data.
+   Allows users who want to load a UT saved map that has extra data in it without
+   actually loading that extra data. Maybe they want to wipe our data without having the
+   trees load, or maybe in theory idk our data is bad for some reason.  
+   The use cases for this are generally minimal but they exist.
+
+ ~ Tweaked burnbuffer trim action on > 128 vs > 64.
+
+ ~ Known Issue: Investigated log exceptions on application.quit from map loaded with extra trees.
+   No easy way to solve this atm, it's a bit of side effect of the new loading changes in 1.6
+   Basically I wipe the array clear upon level unloading,if not paused before exit there can
+   be things still trying to access stuff before it finishs it's exit process.
+   This used to not happen because our redirects were removed before this even happened.
+   Now since they are always-on it's an issue.
+   The fix would be to do this on-release but that causes an old issue with Mapeditor retaining
+   sh1t in the array if you load map after map without exiting to main menu first.
+   There is probably a way to get around this, I have some things in mind but it's for
+   another release one that I'll need to really test the sh1t out of, not this point release.
+
+12-7-2016 v1.6.0-f4 Build_006 (RC)
+
+
+ + Planning ahead in the container object we user to store the buring stuff.
+   Have allocated objects for future use for the tree data as well. Also added
+   at the cost of maybe another 1k of data overhead a bunch of placeholder reserved
+   ints\strings\and {objects}.. so that if at later time changes to the current one
+   are not possible via binaryformatter, well at least we have some headroom for
+   change.  Also added some extra information into the container on each save.
+   Like the UTC-date\Mod build number\Game version and platform, that way if 
+   some sends me a file, and I can't even load it, or even if I can I can extract.
+   that basic information.  
+
+
+ + Looked into the certain fire related calls and the randomizer. I don't see the connection
+   to more trees yet, if anything people should be getting less fire, I think what was going
+   on was part the new fireAI and part this mod being fucked up in 1.6.0_f4-Build01.
+
+ + Fixed the issue of Helo's getting stuck fighting fire that doesn't exist.. or fires that exit
+   that might not be in the burning array. They were a byproduct of lots of little things that
+   are fixed now. And if some case I've not come across yet ever produces it or 
+   a user has a build_001 save.  ResetAllBurningTrees should clear everything out.
+ 
+ + ClearAllOurSaveDataFromThisFile show in option with debug_level 2 set will, when inside a
+   loaded map, wipe the "makavo/unlimiter" and "KHUnlimiter_v1_0" data stored in memory\file.
+   When you press the button it's gone, however it's not really gone till you save.
+   It doesn't remove anything from the game active though... so in theory you can press it 
+   all you want, so long as you save your game (and new copies of data get saved ... or not saved
+   if <262k) in use.  *Provide for some extreme case where user may want to force a wipe. 
+    
+
+ + when debug_level 2 is use extra options appear in options, these allow me to dump info.
+   I will probably remove 2 of them eventually, but *ResetAllBurningtrees* basically reset's
+   your map to make sure NO trees are buring or damaged. You still have to wait for the 'ground'
+   to recover though. ~6mo.  Basically if you're in Forest Fire hell it'll reset everything.
+
+ + added options to the options menu, namely the set seperate log file, and extra debugging
+   there are related .xml config file additions for these too.
+
+ + Added Debugging class file, holds some function used by new gui buttons.
+ 
+ + Wrote our Wrappers for save\read\erase to Simmanager I thought there was a locking problem.
+   Was part of debugging but there wasn't an issue but good result if we have proper sync now anyway.
+   // SaveUtils class
+
+ + Removed some the extreme debugging code I had in last version, needs another pass..
+   maybe after release
+
+ + Finally removed the old PluginChanged() dead code. Ok the source is still there commented out
+   but we no longer compile in the dead code.
+
+
+ + Found and fix the "deleted trees re-appear issue" 
+   Basically we were not clearing data when it existed, and we no longer needed it (down packed <262k). Easy enough to fix.
+   Mucho thanks to SamSamTS for sending me a debuglevel2 log.. showed me right where to focus.
+   Funny enough was working on similar related to similar function for burning trees storage at the time.
+   Life has funny timing sometimes.
+   //bug fixed
+
+ + fixed additional saving issue where we were saving an unpacked burning when really we shouldn't
+   have been saving one at all.
+   //new issue in new code fixed.
+
+ + Reworked around the damn timing issue where we were saving BT's stuff after the darn storagearea
+   was already seralized,needing a double save. In theory how we wanted to do it should have worked per the code. idk
+   whatever. Changed things to get called via DataExtentions OnSave. Deseralize still works from direct
+   replacement. Bottomline sh1t is working nice now... beside the fact there is way more lines of code
+   then there needs to be right now.
+  
+
+12-4-2016 v1.6.0-f4 Build_004 (beta)
+
+
+ + fixed direct bug where we where when packing we were reordering the live TM.burningtrees array.
+   we now make a copy and work from that. That might have been the cause of some freaky freaky
+   fire issues after a save, especially if at least a couple trees were burning at time.
+   //critical Bug fixed - peeps with those now 'bad' saves should in theory
+   //still be able to load...clear up any existing fires happen and problem should not happen again.
+
+ + Was a clear bug upon loading a map, CO now resets the bitflags for burning\damaged
+   clearing them before loading the trees.
+   I somehow missed that little addition... it's now included 
+   //bug fixed.. 
+
+ + re:known issue of unable to load map previously saved with UT without UT enabled
+   because stored indexes in burning list could reference indexes > 262k.
+   We've in addition to reordering when packing we now only save burningtree items that have
+   m_treeindex <262k via original process.
+   In theory this means if you load map saved with UT but don't have UT enabled... yeah you
+   don't get the extra trees but you also will not get buring indexes for missing treee in the
+   buring list and things *should* match up ok for what was loaded.
+   //critical bug fixed
+
+
+ + We now attempt to store those with >262k as their burningtree tree index into our own
+   seperatestorage - packed or not packed, using a different storage\serialze method than before.
+   Now using binaryformatter, we'll have to see how this goes.. some other mods use this method
+   so I'm gonna try it, less of a headache then manually writing byte arrays.  
+   But I don't know how fragile it is to 'change'..not friendly I think.
+
+ + On major errors we try to just not save burningtrees or recreate ones >262k..,
+   Probably better them bombing out and is it really the end of the world?
+
+
+ ~ A ton of debugging code added and sh1t ton of un-optimised new code added so shit
+   is gonna be slower during saving\loading a bit (should be 'that' noticeable) till 
+   I'm sure things are working 99% ok and can go back though and refactor a bit.
+
+
 11-29-2016 v1.6.0-f4 Build_003
  + updated code to account for LoadingExtentions:Oncreated no longer firing early in the process.
    we now enable our detoured function when enabled with 'enabled'\onstartup and it's only disabled when 'disabled'

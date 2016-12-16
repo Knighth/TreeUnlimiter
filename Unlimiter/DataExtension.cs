@@ -8,35 +8,6 @@ namespace TreeUnlimiter
         public static ISerializableData _serializableData;
         public static UTSaveDataContainer m_UTSaveDataContainer;
 
-        internal static void DumpDataKeys()
-        {
-            try
-            {
-                Logger.dbgLog("Dumping _serializedData.EnumData()");
-                if (_serializableData == null)
-                {
-                    Logger.dbgLog("_serializedData: is null.");
-                }
-                else
-                {
-                    string[] tmpstrarray = _serializableData.EnumerateData();
-                    if(tmpstrarray !=null && tmpstrarray.Length != 0)
-                    {
-                        Logger.dbgLog("extra data count: " + tmpstrarray.Length.ToString());
-                        for (int i = 0; i < tmpstrarray.Length; i++) 
-                        {
-                           Logger.dbgLog(string.Format("entry:{0} name:{1}", i.ToString(),tmpstrarray[i].ToString()));
-                        }
-                    }
-
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.dbgLog(ex.ToString());
-            }
- 
-        }
 
         //This get fired once per app 'Session'
         //It does not fire once per each map load unless you exit to mainmenu.
@@ -61,7 +32,7 @@ namespace TreeUnlimiter
             {
                 if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
                 {
-                        DumpDataKeys();
+                    SaveDataUtils.ListDataKeysToLog();
                 }
             }
             catch (Exception ex)
@@ -79,7 +50,7 @@ namespace TreeUnlimiter
             }
             catch (Exception ex1)
             {
-                Logger.dbgLog("", ex1, true);
+                Logger.dbgLog("custom tree data exception bubbled up: ", ex1, true);
             }
             try
             {
@@ -87,10 +58,12 @@ namespace TreeUnlimiter
             }
             catch (Exception ex)
             {
-                Logger.dbgLog("", ex, true);
+                Logger.dbgLog("custom burning tree data exceptions bubbled up: ", ex, true);
             }
 
+            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("OnSaveData() Completely finished saving custom data." + DateTime.Now.ToString(Mod.DTMilli)); }
         }
+
         public override void OnReleased()
         {
             _serializableData = null;

@@ -13,6 +13,56 @@ namespace TreeUnlimiter
 	internal static class SaveDataUtils
 	{
 
+        public static bool ListDataKeysToLog()
+        {
+            bool result = false;
+            try
+            {
+
+                SimulationManager SimMgr;
+                if (Singleton<SimulationManager>.exists)
+                { SimMgr = Singleton<SimulationManager>.instance; }
+                else
+                {
+                    Logger.dbgLog("SimMgr is null or does not exist");
+                    return false;
+                }
+                if (SimMgr.m_serializableDataStorage == null)
+                {
+                    Logger.dbgLog("m_serializableDataStorage null or does not exist");
+                    return false;
+                }
+                while (!Monitor.TryEnter(SimMgr.m_serializableDataStorage, SimulationManager.SYNCHRONIZE_TIMEOUT))
+                {
+                }
+
+                try
+                {
+                    Logger.dbgLog(string.Format("---  m_serializableDataStorage contains {0} entries: ---", SimMgr.m_serializableDataStorage.Count.ToString()));
+                    if (SimMgr.m_serializableDataStorage.Count > 0)
+                    {
+                        int i = 0;
+                        foreach( KeyValuePair<string,byte[]> kvp in SimMgr.m_serializableDataStorage)
+                        {
+                            Logger.dbgLog(string.Format("entry:{0} name:{1} #bytes:{2}", i.ToString(), kvp.Key.ToString(), kvp.Value.Length.ToString()));
+                            i++;
+                        }
+                    }
+                    result = true;
+                }
+                finally
+                {
+                    Monitor.Exit(SimMgr.m_serializableDataStorage);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.dbgLog("Error while listing custom data keys.  ",ex);
+            }
+            return result;
+        }
+
+
         public static bool EraseBytesFromNamedKey(string id)
         {
             bool result = false;
@@ -147,6 +197,11 @@ namespace TreeUnlimiter
                 return false;
             }
 
+            if (theBytes == null || theBytes.Length > 16700000) //16711680 
+            {
+                Logger.dbgLog("Error - The array you are trying to save is > than the allowed max size of approximately 16.7 million bytes.");
+                return false;
+            }
             SimulationManager SimMgr;
             if(Singleton<SimulationManager>.exists)
             { SimMgr = Singleton<SimulationManager>.instance; }

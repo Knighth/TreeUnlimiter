@@ -16,6 +16,13 @@ namespace TreeUnlimiter
 
         static private Stopwatch m_PerfMonitor = new Stopwatch();
 
+        /// <summary>
+        /// Copies from original list to a new list based on treeindex values, based upon the flag sent.
+        /// ie copies entries with 0 to 262144 only or that have 262144 to 'limit', or just all.
+        /// </summary>
+        /// <param name="orgBurningList">The orginal source list</param>
+        /// <param name="bCopyFlag">0= CopyAllEntries; 1= 0 to 262144; 2= 262144 to 'limit'</param>
+        /// <returns>a new FastList of treemanager.burningtrees, returns an empty list on none or error.</returns>
         public static FastList<TreeManager.BurningTree> CopyBurningTreesList(ref FastList<TreeManager.BurningTree> orgBurningList,byte bCopyFlag)
         {
             FastList<TreeManager.BurningTree> newlist = new FastList<TreeManager.BurningTree>();
@@ -250,6 +257,7 @@ namespace TreeUnlimiter
                 else
                 { Logger.dbgLog("idxlist count: " + idxList.Count + " lastsaveusedpacking: " + Loader.LastSaveUsedPacking.ToString()); }
                 Logger.dbgLog("threadname: " + Thread.CurrentThread.Name);
+                if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated!"); }
             }
 
             TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
@@ -388,11 +396,12 @@ namespace TreeUnlimiter
                     if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + " org burning trees (pack but empty)"); }
                 }
 
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using packer seralizer."); }
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using packer seralizer.  "  +DateTime.Now.ToString(Mod.DTMilli)); }
+                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Tree saving process completed. (packed) " + DateTime.Now.ToString(Mod.DTMilli)); }
 
             }
 
-            else //use original.
+            else //use original. we can hit this when we're active but packer either didn't get used or we are in ghost mode.
             {
                 if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("idxList was Null or idxList.Count was < 2"); }
                 if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using original seralizer."); }
@@ -481,7 +490,8 @@ namespace TreeUnlimiter
                     if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + " org burning trees (org empty)"); }
                 }
                 
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using original seralizer." + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using original seralizer.  " + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Tree saving process completed. (original) " + DateTime.Now.ToString(Mod.DTMilli)); }
             }
            // Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
         }

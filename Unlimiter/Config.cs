@@ -18,6 +18,7 @@ namespace TreeUnlimiter
         public int NullTreeOptionsIndex = 0;
         public bool EmergencyOnly_RemoveAllTrees = false;
         public bool ExtraLogDataChecked = false;
+        public bool GhostModeEnabled = false;
 
 
         public static void ValidateConfig(ref Configuration theconfig)

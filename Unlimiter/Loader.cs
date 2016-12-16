@@ -24,6 +24,7 @@ namespace TreeUnlimiter
         {
 
             if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnCreated fired.  " + DateTime.Now.ToString(Mod.DTMilli)); }
+
             //It's useless to try and detect loadingmode here as the simmanager loading obj is empty on first start
             //and there after only contains the previous state at this stage, ie the prior map or assset or game.
             //it's fresh state gets updated sometime after OnCreated. Below both will fail with null obj.
@@ -74,11 +75,12 @@ namespace TreeUnlimiter
         public override void OnLevelLoaded(LoadMode mode)
         {
             LastSaveUsedPacking = false;
-            if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Map LoadMode:" + mode.ToString()); }
+            if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Map LoadMode:" + mode.ToString() + "  " + DateTime.Now.ToString(Mod.DTMilli)); }
             try
             {
                 //hide ability to change maxtrees.
-                if (Mod.maxTreeSlider != null) { Mod.maxTreeSlider.Disable();}
+                if (Mod.maxTreeSlider != null) { Mod.maxTreeSlider.Disable(); }
+                if (Mod.GhostModechkbox != null) { Mod.GhostModechkbox.Disable(); }
 
                 if (Mod.IsEnabled == true & Mod.IsSetupActive == false)
                 {
@@ -121,7 +123,7 @@ namespace TreeUnlimiter
                         }
                     }
 
-                    if (mode == LoadMode.NewMap || mode == LoadMode.LoadMap || mode == LoadMode.NewGame || mode== LoadMode.LoadMap)
+                    if (mode == LoadMode.NewMap || mode == LoadMode.LoadMap || mode == LoadMode.NewGame || mode == LoadMode.LoadMap || mode == LoadMode.NewGameFromScenario || mode == LoadMode.NewScenarioFromGame || mode == LoadMode.NewScenarioFromMap)
                     {
                         //total hack to address wierd behavior of -1 m_treecount and 0 itemcount
                         // this hack attempts to jimmy things up the way things appear without the mod loaded in the map editor.
@@ -169,10 +171,17 @@ namespace TreeUnlimiter
         {
             try
             {
+                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) {Logger.dbgLog("OnLevelUnloading() " + DateTime.Now.ToString(Mod.DTMilli)); }
+
                 if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
                 {
-                    if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnLevelUnloading()"); }
-                    ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT);  //rebuild to org values seems to solve problem of mapeditor retaining prior map trees.
+                    //rebuild to org values seems to solve problem of mapeditor retaining prior map trees.
+                    //side effect seems to be causes errors to be thrown in log when quitting app when in game.
+                    //because there can be queued tasks\items that sort of continue for a second or so while it exits.
+                    //TODO: either move this to on-released and find away around mapeditor issue\problem. (side effects?)
+                    //      or ...idk maybe rework to always clear on load in data.deseralize upfront?...messy?.  
+                    ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT);  
+
                     Loader.LastFileClearedFlag = false;
                     if (LastSaveList != null)
                     { LastSaveList.Clear(); LastSaveList.Capacity = 1; LastSaveList = null; }
@@ -189,14 +198,19 @@ namespace TreeUnlimiter
 
         public override void OnReleased()
         {
-            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnReleased()\r\n"); }
-
-            if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
+            try
             {
-                //1.6.0 -
-                // we're going to temp. not do this.
-                //Mod.ReveseSetup(); //attempt to revert redirects | has it's own try catch.
+                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnReleased()  " + DateTime.Now.ToString(Mod.DTMilli) + "\r\n"); }
+
+                if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
+                {
+                    //1.6.0 -
+                    // we're going to temp. not do this.
+                    //Mod.ReveseSetup(); //attempt to revert redirects | has it's own try catch.
+                }
             }
+            catch(Exception ex)
+            { Logger.dbgLog("", ex); }
             base.OnReleased();
         }
 
@@ -216,7 +230,7 @@ namespace TreeUnlimiter
                 Singleton<TreeManager>.instance.m_trees = new Array32<TreeInstance>((uint)tsize);
                 Singleton<TreeManager>.instance.m_updatedTrees = new ulong[updatesize];
                 Singleton<TreeManager>.instance.m_trees.CreateItem(out num);
-                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("ResetTreeManager completed; forced=" + bforce.ToString()); }
+                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Reset of TreeManager completed; forced=" + bforce.ToString() + "  " + DateTime.Now.ToString(Mod.DTMilli)); }
             }
         }
     }

@@ -210,7 +210,12 @@ namespace TreeUnlimiter
                         {
                             for (int k = mX; k <= num; k++)
                             {
+                                //12-15-2016 debug attempt relating to clearing the array on 'onlevelunload', but certain calls are still pending against old data when we do it.
+                                //int tmpvar = (j * 540 + k);
+                                //if (tmpvar >= tm.m_treeGrid.Length) { Logger.dbgLog("grididx: " + tmpvar.ToString() + " about to exceed real gridsize of " + tm.m_treeGrid.Length.ToString()); }
+                                //uint mTreeGrid = tm.m_treeGrid[tmpvar];
                                 uint mTreeGrid = tm.m_treeGrid[j * 540 + k];
+                                //if (mTreeGrid >= tm.m_trees.m_buffer.Length) { Logger.dbgLog("m_treebufferidx: " + mTreeGrid.ToString() + " about to exceed real tree buffer size of " + tm.m_trees.m_buffer.Length.ToString()); }
                                 int num1 = 0;
                                 while (mTreeGrid != 0)
                                 {
@@ -222,7 +227,7 @@ namespace TreeUnlimiter
                                     {
                                         continue;
                                     }
-                                    Logger.dbgLog(string.Format("mTreeGrid = {0}  num2= {1}  limit= {2}", mTreeGrid.ToString(), num2, LimitTreeManager.Helper.TreeLimit.ToString()));
+                                    Logger.dbgLog(string.Format("mTreeGrid = {0}  num2= {1}  limit= {2}", mTreeGrid.ToString(), num2.ToString(), LimitTreeManager.Helper.TreeLimit.ToString()));
                                     CODebugBase<LogChannel>.Error(LogChannel.Core, string.Concat("Invalid list detected!\n", Environment.StackTrace));
                                     break;
                                 }
@@ -938,6 +943,7 @@ namespace TreeUnlimiter
                     if (Mod.DEBUG_LOG_ON){Logger.dbgLog(string.Concat(" treelimit = ", Helper.TreeLimit.ToString()));}
 //9-25-2015         if (Mod.DEBUG_LOG_ON){Debug.Log("[TreeUnlimiter::CustomSerializer::Deserialize()] calling Ensure Init");}
                     LimitTreeManager.Helper.EnsureInit(2);
+                    if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated!"); }
                     if (!LimitTreeManager.Helper.UseModifiedTreeCap) { return false; }
 
                     byte[] numArray = null;
@@ -1285,6 +1291,7 @@ namespace TreeUnlimiter
             /// </summary>
             internal static void Serialize()
             {
+                if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated!"); }
                 if (!LimitTreeManager.Helper.UseModifiedTreeCap)
                 {
                     return;
@@ -1297,107 +1304,111 @@ namespace TreeUnlimiter
                  */
                 
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Concat(" treelimit = ", LimitTreeManager.Helper.TreeLimit.ToString() , " buffersize=" , Singleton<TreeManager>.instance.m_trees.m_size.ToString())); }
-
-                TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
-                if (Loader.LastSaveList == null)
+                try
                 {
-                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("LastSaveList==null Obtaining fresh PackedList"); }
-                    Loader.LastSaveList = Packer.GetPackedList();
-                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("fresh PackedList assigned to Loader.LastSaveList "); }
-                }
-                else
-                {
-                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using Stale?? PackedList"); }
-                }
-                if (mBuffer.Length <= Mod.DEFAULT_TREE_COUNT || Loader.LastSaveList.Count <= Mod.DEFAULT_TREE_COUNT)
-                { 
-                    Logger.dbgLog("No extra tree data to save.");
-                    if (Mod.DEBUG_LOG_ON)
+                    TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
+                    if (Loader.LastSaveList == null)
                     {
-                        Logger.dbgLog("Setting LastSaveUsedPacking = False. and returning and removing old data!");
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("LastSaveList==null Obtaining fresh PackedList"); }
+                        Loader.LastSaveList = Packer.GetPackedList();
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("fresh PackedList assigned to Loader.LastSaveList "); }
                     }
-                    Loader.LastSaveUsedPacking = false;
-                    //1.6.0_build04 Bugfix for old data staying around 
-                    //case is if we had >262k saved and now we don't we can't bail without wipinging here.
-                    //or else we end up with "I deleted trees but they are back after save+reload!" problems.
-                    if (SaveDataUtils.EraseBytesFromNamedKey(Mod.MOD_OrgDataKEYNAME))
-                    { 
-                        Logger.dbgLog("We found and removed old data."); 
-                    }
-                    Loader.LastFileClearedFlag = true;
-                    return; 
-                }
-                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Setting LastSaveUsedPacking = True."); }
-                Loader.LastSaveUsedPacking = true;
-
-                List<ushort> nums = new List<ushort>();
-                nums.Add(Mod.CurrentFormatVersion); //this is our internal save format version #
-                
-                //now add our present 32bit array size as 2 ushorts.
-                uint orgint = (uint)LimitTreeManager.Helper.TreeLimit;
-                ushort firsthalf = (ushort) (orgint >> 16); //right shift 16
-                ushort secondhalf = (ushort)(orgint & 0xffff); //and 16bits  
-                // now store them in entries 1 and 2.
-                nums.Add(firsthalf);    //int32-1 arraysize at time of save.
-                nums.Add(secondhalf);   //get these back later by (first <<16) | (second & 0xffff) 
-                nums.Add(0);   //int32-2 actual treecount 
-                nums.Add(0);   //int32-2 actual treecount
-                nums.Add(0);    //int32-3 reserved for future use.
-                nums.Add(0);   //int32-3 reserved for future use.
-                nums.Add(0);    //int32-4 reserved for future use.
-                nums.Add(0);   //int32-4 reserved for future use.
-                nums.Add(0);   //ushort Flags reserved for furture use. 
-
-                int num = 0;
-
-                //orignal
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("LastSaveUsedPacking: " + Loader.LastSaveUsedPacking.ToString() + " LastSaveList: " + (Loader.LastSaveList == null ? "null":"not null")); }
-                if (Loader.LastSaveUsedPacking == false | Loader.LastSaveList == null)
-                {
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer.(no packing)"); }
-
-                    for (int i = Mod.DEFAULT_TREE_COUNT; i < LimitTreeManager.Helper.TreeLimit; i++) //from top of their range to ours.
+                    else
                     {
-                        TreeInstance treeInstance = mBuffer[i];
-                        nums.Add(treeInstance.m_flags);
-                        if (treeInstance.m_flags != 0)
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using Stale?? PackedList"); }
+                    }
+                    if (mBuffer.Length <= Mod.DEFAULT_TREE_COUNT || Loader.LastSaveList.Count <= Mod.DEFAULT_TREE_COUNT)
+                    {
+                        Logger.dbgLog("No extra tree data to save.");
+                        if (Mod.DEBUG_LOG_ON)
                         {
-                            nums.Add(treeInstance.m_infoIndex);
-                            nums.Add((ushort)treeInstance.m_posX);
-                            nums.Add((ushort)treeInstance.m_posZ);
-                            num++;
+                            Logger.dbgLog("Setting LastSaveUsedPacking = False. and returning and removing old data!");
+                        }
+                        Loader.LastSaveUsedPacking = false;
+                        //1.6.0_build04 Bugfix for old data staying around 
+                        //case is if we had >262k saved and now we don't we can't bail without wipinging here.
+                        //or else we end up with "I deleted trees but they are back after save+reload!" problems.
+                        if (SaveDataUtils.EraseBytesFromNamedKey(Mod.MOD_OrgDataKEYNAME))
+                        {
+                            Logger.dbgLog("We found and removed old data.");
+                        }
+                        Loader.LastFileClearedFlag = true;
+                        return;
+                    }
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Setting LastSaveUsedPacking = True."); }
+                    Loader.LastSaveUsedPacking = true;
 
+                    List<ushort> nums = new List<ushort>();
+                    nums.Add(Mod.CurrentFormatVersion); //this is our internal save format version #
+
+                    //now add our present 32bit array size as 2 ushorts.
+                    uint orgint = (uint)LimitTreeManager.Helper.TreeLimit;
+                    ushort firsthalf = (ushort)(orgint >> 16); //right shift 16
+                    ushort secondhalf = (ushort)(orgint & 0xffff); //and 16bits  
+                    // now store them in entries 1 and 2.
+                    nums.Add(firsthalf);    //int32-1 arraysize at time of save.
+                    nums.Add(secondhalf);   //get these back later by (first <<16) | (second & 0xffff) 
+                    nums.Add(0);   //int32-2 actual treecount 
+                    nums.Add(0);   //int32-2 actual treecount
+                    nums.Add(0);    //int32-3 reserved for future use.
+                    nums.Add(0);   //int32-3 reserved for future use.
+                    nums.Add(0);    //int32-4 reserved for future use.
+                    nums.Add(0);   //int32-4 reserved for future use.
+                    nums.Add(0);   //ushort Flags reserved for furture use. 
+
+                    int num = 0;
+
+                    //orignal
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("LastSaveUsedPacking: " + Loader.LastSaveUsedPacking.ToString() + " LastSaveList: " + (Loader.LastSaveList == null ? "null" : "not null")); }
+                    if (Loader.LastSaveUsedPacking == false | Loader.LastSaveList == null)
+                    {
+                        if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer.(no packing)"); }
+
+                        for (int i = Mod.DEFAULT_TREE_COUNT; i < LimitTreeManager.Helper.TreeLimit; i++) //from top of their range to ours.
+                        {
+                            TreeInstance treeInstance = mBuffer[i];
+                            nums.Add(treeInstance.m_flags);
+                            if (treeInstance.m_flags != 0)
+                            {
+                                nums.Add(treeInstance.m_infoIndex);
+                                nums.Add((ushort)treeInstance.m_posX);
+                                nums.Add((ushort)treeInstance.m_posZ);
+                                num++;
+
+                            }
                         }
                     }
-                }
-                else //use packing
-                {
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer. (packing) " + Loader.LastSaveList.Count.ToString()); }
-
-                    for (int i = Mod.DEFAULT_TREE_COUNT; i < Loader.LastSaveList.Count; i++) //from top of thier range to ours.
+                    else //use packing
                     {
-                        TreeInstance treeInstance = mBuffer[Loader.LastSaveList[i]];
-                        nums.Add(treeInstance.m_flags);
-                        if (treeInstance.m_flags != 0)
+                        if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using custom seralizer. (packing) " + Loader.LastSaveList.Count.ToString()); }
+
+                        for (int i = Mod.DEFAULT_TREE_COUNT; i < Loader.LastSaveList.Count; i++) //from top of thier range to ours.
                         {
-                            nums.Add(treeInstance.m_infoIndex);
-                            nums.Add((ushort)treeInstance.m_posX);
-                            nums.Add((ushort)treeInstance.m_posZ);
-                            num++;
+                            TreeInstance treeInstance = mBuffer[Loader.LastSaveList[i]];
+                            nums.Add(treeInstance.m_flags);
+                            if (treeInstance.m_flags != 0)
+                            {
+                                nums.Add(treeInstance.m_infoIndex);
+                                nums.Add((ushort)treeInstance.m_posX);
+                                nums.Add((ushort)treeInstance.m_posZ);
+                                num++;
+                            }
                         }
                     }
-                }
-                //save actual tree count to header.
-                nums[3] = (ushort)(num >> 16);
-                nums[4] = (ushort)(num & 0xffff);
-                nums[9] = 0; //options
-                if (Loader.LastSaveUsedPacking) //add packed flag.
-                { nums[9] = (ushort)(nums[9] | (ushort)Helper.SaveFlags.packed); }
+                    //save actual tree count to header.
+                    nums[3] = (ushort)(num >> 16);
+                    nums[4] = (ushort)(num & 0xffff);
+                    nums[9] = 0; //options
+                    if (Loader.LastSaveUsedPacking) //add packed flag.
+                    { nums[9] = (ushort)(nums[9] | (ushort)Helper.SaveFlags.packed); }
 
-                //TODO:Add some try catches around at least this call if not the above.
-                object[] treeLimit = new object[] { num, LimitTreeManager.Helper.TreeLimit - Mod.DEFAULT_TREE_COUNT, nums.Count * 2, Mod.CurrentFormatVersion.ToString() };
-                Logger.dbgLog(string.Format("Saving {0} of {1} in extra trees range, size in savegame approx: {2} bytes, saveformatverion:{3}", treeLimit));
-                Singleton<SimulationManager>.instance.m_serializableDataStorage["mabako/unlimiter"] = nums.SelectMany<ushort, byte>((ushort v) => BitConverter.GetBytes(v)).ToArray<byte>();
+                    //TODO:Add some try catches around at least this call if not the above.
+                    object[] treeLimit = new object[] { num, LimitTreeManager.Helper.TreeLimit - Mod.DEFAULT_TREE_COUNT, nums.Count * 2, Mod.CurrentFormatVersion.ToString() };
+                    Logger.dbgLog(string.Format("Saving {0} of {1} in extra trees range, size in savegame approx: {2} bytes, saveformatverion:{3}", treeLimit));
+                    Singleton<SimulationManager>.instance.m_serializableDataStorage["mabako/unlimiter"] = nums.SelectMany<ushort, byte>((ushort v) => BitConverter.GetBytes(v)).ToArray<byte>();
+                }
+                catch(Exception ex)
+                { Logger.dbgLog("Error during main extra tree saving process. :", ex); }
 
             }
 
@@ -1412,6 +1423,7 @@ namespace TreeUnlimiter
             internal static void SerializeBurningTreeWrapper()
             {
                 //let's make sure we're enabled.
+                if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated!"); }
                 if (!LimitTreeManager.Helper.UseModifiedTreeCap)
                 {
                     return;
@@ -1583,6 +1595,7 @@ namespace TreeUnlimiter
                 short num;
                 short num1;
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Starting detoured deseralizer. Making sure we're initialized."); }
+                if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated!"); }
                 LimitTreeManager.Helper.EnsureInit(1);
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginDeserialize(s, "TreeManager");
                 TreeManager treeManager = Singleton<TreeManager>.instance;
@@ -1594,7 +1607,7 @@ namespace TreeUnlimiter
                 treeManager.m_trees.ClearUnused();
                 treeManager.m_burningTrees.Clear();  //v1.6.0 c/o
                 //my personal addition because no sense in constant growth.
-                if ((treeManager.m_burningTrees.m_buffer == null) == false && treeManager.m_burningTrees.m_buffer.Length > 64) 
+                if ((treeManager.m_burningTrees.m_buffer == null) == false && treeManager.m_burningTrees.m_buffer.Length > 128) 
                 { treeManager.m_burningTrees.Trim(); }
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("m_burningTrees.Clear()'d and m_burningTrees.Trim()'d"); }
 
@@ -1690,6 +1703,7 @@ namespace TreeUnlimiter
                 {
                     if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using ModifiedTreeCap - Calling Custom Tree Deserializer."); }
                     LimitTreeManager.CustomSerializer.Deserialize();
+
                     if (s.version >= 266)
                     {
                         if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Using ModifiedTreeCap - Calling Custom BurningTree Deserializer."); }
@@ -1699,6 +1713,10 @@ namespace TreeUnlimiter
                     {
                         if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("save version < 266 no need to load custom tree data. ver:" + s.version.ToString()); }
                     }
+                }
+                else 
+                {
+                    if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated! skipped extra trees and extra burning tree data."); }
                 }
 
 
@@ -1752,8 +1770,10 @@ namespace TreeUnlimiter
                 TreeManager instance = Singleton<TreeManager>.instance;
                 TreeInstance[] buffer = instance.m_trees.m_buffer;
 
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) {Logger.dbgLog("Mod.config.NullTreeOptionsValue: " + Mod.config.NullTreeOptionsValue.ToString()); }
+
                 //Our additions, if enabled do our version if not just C\O's.
-                if (Mod.config.NullTreeOptionsValue != TreePrefabsDebug.NullTreeOptions.DoNothing)
+                if (Mod.IsGhostMode == false && Mod.config.NullTreeOptionsValue != TreePrefabsDebug.NullTreeOptions.DoNothing)
                 {
                     if (Mod.DEBUG_LOG_ON)
                     { Logger.dbgLog("Starting custom Tree validation process..."); }
@@ -1816,8 +1836,8 @@ namespace TreeUnlimiter
                 }
                 catch (Exception ex)
                 { 
-                    Logger.dbgLog("", ex, true);
-                    Logger.dbgLog("** May have failed to save trees due to last exception inside packer.seralize.\n Please enable verbose logging option and make contact with author via Steam to help debug the problem.", ex, true);
+                    Logger.dbgLog("Serialization Error! : ", ex, true);
+                    Logger.dbgLog("** May have failed to save trees due to last exception inside packer.seralize.\n Please enable dev logging option and make contact with author via Steam to help debug the problem.", ex, true);
                 }
 
                 // I really don't know why but we had to move this code to DataExtentions
@@ -1882,16 +1902,16 @@ namespace TreeUnlimiter
                 }
                 num3.EndWrite();
                 */ 
-                Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("replaced seralizer completed."); }
                 Loader.LastFileClearedFlag = false;
                 if (Loader.LastSaveList != null)
                 {
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Cleaning up last save flags and list object."); }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Cleaning up last save and file flags and list object."); }
                     Loader.LastSaveList.Clear();
                     Loader.LastSaveUsedPacking = false;
                     Loader.LastSaveList = null;
                 }
+                Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("CO TreeManager.Data replaced seralizer totally completed."); }
 
             }
         }
@@ -1927,15 +1947,20 @@ namespace TreeUnlimiter
                     {
                         return false;
                     }
+                    if (Mod.IsGhostMode == true)
+                    {
+                        return false;
+                    }
                     SimulationManager.UpdateMode mUpdateMode = Singleton<SimulationManager>.instance.m_metaData.m_updateMode;
 //9-25-2015         Mod.LastMode = mUpdateMode; //probably can ditch this now was used for debugging.
                     
                     if (mUpdateMode == SimulationManager.UpdateMode.LoadGame || mUpdateMode == SimulationManager.UpdateMode.LoadMap
                         || mUpdateMode == SimulationManager.UpdateMode.NewGameFromMap || mUpdateMode == SimulationManager.UpdateMode.NewGameFromScenario
                         || mUpdateMode == SimulationManager.UpdateMode.NewMap || mUpdateMode == SimulationManager.UpdateMode.LoadScenario
-                        || mUpdateMode == SimulationManager.UpdateMode.NewScenarioFromGame || mUpdateMode == SimulationManager.UpdateMode.NewScenarioFromGame)
+                        || mUpdateMode == SimulationManager.UpdateMode.NewScenarioFromGame || mUpdateMode == SimulationManager.UpdateMode.NewScenarioFromMap
+                        || mUpdateMode == SimulationManager.UpdateMode.UpdateScenarioFromGame  || mUpdateMode == SimulationManager.UpdateMode.UpdateScenarioFromMap)
                     {
-                        return true;
+                            return true;  //we are in use.
                     }
                     else
                     {
