@@ -19,7 +19,9 @@ namespace TreeUnlimiter
         internal static bool LastSaveUsedPacking = false;
         internal static bool LastFileClearedFlag = false;
         internal static List<int> LastSaveList;
+
         public Loader() {}
+        
         public override void OnCreated(ILoading loading)
         {
 
@@ -79,8 +81,8 @@ namespace TreeUnlimiter
             try
             {
                 //hide ability to change maxtrees.
-                if (Mod.maxTreeSlider != null) { Mod.maxTreeSlider.Disable(); }
-                if (Mod.GhostModechkbox != null) { Mod.GhostModechkbox.Disable(); }
+                if (UTSettingsUI.maxTreeSlider != null) { UTSettingsUI.maxTreeSlider.Disable(); }
+                if (UTSettingsUI.GhostModechkbox != null) { UTSettingsUI.GhostModechkbox.Disable(); }
 
                 if (Mod.IsEnabled == true & Mod.IsSetupActive == false)
                 {
@@ -147,6 +149,10 @@ namespace TreeUnlimiter
 
                 if (Mod.DEBUG_LOG_ON == true)  //Debugging crap for the above stated hack.
                 {
+                    if (Singleton<SimulationManager>.instance.m_metaData != null)
+                    {
+                        Logger.dbgLog(string.Format("Mapname: {0}  Cityname: {1}", Singleton<SimulationManager>.instance.m_metaData.m_MapName, Singleton<SimulationManager>.instance.m_metaData.m_CityName));
+                    }
                     TreeManager TreeMgr = Singleton<TreeManager>.instance;
                     int mtreecountr = TreeMgr.m_treeCount;
                     uint mtreebuffsize = TreeMgr.m_trees.m_size;
@@ -171,7 +177,7 @@ namespace TreeUnlimiter
         {
             try
             {
-                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) {Logger.dbgLog("OnLevelUnloading() " + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (TreeUnlimiter.Mod.DEBUG_LOG_ON) {Logger.dbgLog("OnLevelUnloading() " + DateTime.Now.ToString(Mod.DTMilli)); }
 
                 if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
                 {
@@ -180,7 +186,9 @@ namespace TreeUnlimiter
                     //because there can be queued tasks\items that sort of continue for a second or so while it exits.
                     //TODO: either move this to on-released and find away around mapeditor issue\problem. (side effects?)
                     //      or ...idk maybe rework to always clear on load in data.deseralize upfront?...messy?.  
-                    ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT);  
+                    //^^ 12-22-2016 ^^ done!!
+                    //ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT);  
+
 
                     Loader.LastFileClearedFlag = false;
                     if (LastSaveList != null)
@@ -200,10 +208,11 @@ namespace TreeUnlimiter
         {
             try
             {
-                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnReleased()  " + DateTime.Now.ToString(Mod.DTMilli) + "\r\n"); }
+                if (TreeUnlimiter.Mod.DEBUG_LOG_ON) { Logger.dbgLog("OnReleased()  " + DateTime.Now.ToString(Mod.DTMilli) + "\r\n"); }
 
                 if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
                 {
+                    ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT);
                     //1.6.0 -
                     // we're going to temp. not do this.
                     //Mod.ReveseSetup(); //attempt to revert redirects | has it's own try catch.
@@ -218,7 +227,7 @@ namespace TreeUnlimiter
         //fuction to re-create the TreeManagers m_trees Array32 buffer entirely.
         //used to make sure it's clean and our objects don't carry over map 2 map.
         //also used in certain cases where we want to revert back to nomal treemanager sizes.
-        public void ResetTreeMananger(uint tsize, uint updatesize, bool bforce = false)
+        public static void ResetTreeMananger(uint tsize, uint updatesize, bool bforce = false)
         {
             uint num;
             object[] ostring = new object[]{ tsize.ToString(), updatesize.ToString(), bforce.ToString(), Singleton<TreeManager>.instance.m_trees.m_buffer.Length.ToString() };

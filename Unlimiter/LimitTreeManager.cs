@@ -374,7 +374,7 @@ namespace TreeUnlimiter
                         {
                             Vector3 vector3 = tm.m_trees.m_buffer[mTreeGrid].Position;
                             float single1 = Vector3.Distance(vector3, position);
-                            if (single1 < 32f && (float)Singleton<SimulationManager>.instance.m_randomizer.Int32(32768) * single1 < single)
+                            if (single1 < 32f && (float)Singleton<SimulationManager>.instance.m_randomizer.Int32(32768u) * single1 < single)
                             {
                                 tm.BurnTree(mTreeGrid, group, (int)tree.m_fireIntensity);
                             }
@@ -396,7 +396,7 @@ namespace TreeUnlimiter
                 int num12 = Mathf.Min((int)((position.z + 32f + 72f) / 64f + 135f), 269);
                 BuildingManager buildingManager = Singleton<BuildingManager>.instance;
                 bool flag = false;
-                object[] paramcall ;  //krn
+                //object[] paramcall ;  //krn
                 for (int k = num10; k <= num12; k++)
                 {
                     for (int l = num9; l <= num11; l++)
@@ -432,8 +432,31 @@ namespace TreeUnlimiter
                                     // once things seem to be working. reminder (also needed couple other places):
                                     /* http://community.simtropolis.com/forums/topic/69673-tutorial-how-to-invoke-private-methods-without-reflection/ */
 
-                                    paramcall = new object[] { mBuildingGrid, buildingManager.m_buildings.m_buffer[mBuildingGrid], group};
-                                    var x = tm.GetType().GetMethod("TrySpreadFire", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, paramcall);
+                                    //temp commented
+                                    //paramcall = new object[] { mBuildingGrid, buildingManager.m_buildings.m_buffer[mBuildingGrid], group};
+                                    //var x = tm.GetType().GetMethod("TrySpreadFire", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, paramcall);
+
+                                    if (UTSettingsUI.RadioMastFix)
+                                    {
+                                        if (buildingManager.m_buildings.m_buffer[mBuildingGrid].Info.m_buildingAI.GetType() != typeof(RadioMastAI))
+                                        {
+
+                                            //reverse redirected call.
+                                            TrySpreadFire(mBuildingGrid, ref buildingManager.m_buildings.m_buffer[mBuildingGrid], group);
+                                        }
+                                        else
+                                        {
+                                            if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                                            {
+                                                Logger.dbgLog("Type match on RadioMastAI, skipping burn.");
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        TrySpreadFire(mBuildingGrid, ref buildingManager.m_buildings.m_buffer[mBuildingGrid], group);
+                                    }
+
                                    
                                     //original
                                    // TreeManager.TrySpreadFire(mBuildingGrid, ref buildingManager.m_buildings.m_buffer[mBuildingGrid], group);
@@ -479,7 +502,7 @@ namespace TreeUnlimiter
         }
 
         //KH 11/2016: this originally here via marko, I've left it, though I just noticed
-        // it doesn't appear to be needed. Something to be looked during next round post 1.6
+        // it doesn't appear to be needed. Something to be looked during next round post 1.6.2
 
         private static void InitializeTree(TreeManager tm, uint tree, ref TreeInstance data, bool assetEditor)
         {
@@ -853,6 +876,21 @@ namespace TreeUnlimiter
         }
 
 
+        //flagged as public for reverse redirect.
+        [MethodImpl(MethodImplOptions.NoInlining)] //to prevent inlining
+        public static void TrySpreadFire(ushort buildingID, ref Building buildingData, InstanceManager.Group group)
+        {
+            Logger.dbgLog("I should never be called.");
+            //BuildingInfo info = buildingData.Info;
+            //int num;
+            //int num2;
+            //int num3;
+            //if (info.m_buildingAI.GetFireParameters(buildingID, ref buildingData, out num, out num2, out num3) && (buildingData.m_flags & (Building.Flags.Completed | Building.Flags.Abandoned)) == Building.Flags.Completed && buildingData.m_fireIntensity == 0 && buildingData.GetLastFrameData().m_fireDamage == 0)
+            //{
+            //    info.m_buildingAI.BurnBuilding(buildingID, ref buildingData, group, false);
+            //}
+        }
+
         private static void UpdateData(TreeManager tm, SimulationManager.UpdateMode mode)
         {
             Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginLoading("TreeManager.UpdateData");
@@ -1138,7 +1176,7 @@ namespace TreeUnlimiter
                 //addtions burning trees
                 try
                 {
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("threadname: " + Thread.CurrentThread.Name); }
+                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("started."); }
                     UTSaveDataContainer oMasterContainer;
                     oMasterContainer = DeseralizeSaveDataContainer();  //farm it out, always returns at least bare object.
                     if (oMasterContainer == null || oMasterContainer.SaveType ==1 || oMasterContainer.m_BurningTreeData == null)
@@ -1180,7 +1218,7 @@ namespace TreeUnlimiter
                             }
                             tmpcounter++;
                         }
-                        if (Mod.DEBUG_LOG_ON)
+                        if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
                         { Logger.dbgLog("after m_size: " + TMburningtrees.m_size.ToString() + "  after bufflen: " + TMburningtrees.m_buffer.Length.ToString()); }
                         
                         Logger.dbgLog(string.Format("Processed {0} extra saved burning trees. Added {1} extra saved burning trees", tmpcounter.ToString(), tmpaddcounter.ToString()));
@@ -1208,7 +1246,6 @@ namespace TreeUnlimiter
                 bool errFlag = true;
                 try
                 {
-                    Logger.dbgLog("threadname: " + Thread.CurrentThread.Name);
                     ourBytes = SaveDataUtils.ReadBytesFromNamedKey(UTSaveDataContainer.DefaultContainername);
                     if (ourBytes == null || ourBytes.Length < 10) //ourheaderalone is like 1k.
                     {
@@ -1257,13 +1294,13 @@ namespace TreeUnlimiter
                         MemoryStream memoryStream = new MemoryStream();
                         try
                         {
-                            Logger.dbgLog("Loading our UTSaveDataContainer from bytes to objects!");
                             //memoryStream = new MemoryStream();
                             memoryStream.Write(ourBytes, 0, ourBytes.Length);
                             memoryStream.Position = 0L;
                             oMasterContainer = (UTSaveDataContainer)new BinaryFormatter().Deserialize(memoryStream);
                             oMasterContainer.SaveType = 2;
                             DataExtension.m_UTSaveDataContainer = oMasterContainer;
+                            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Loaded our UTSaveDataContainer from bytes to objects."); }
                         }
                         finally 
                         {
@@ -1311,7 +1348,7 @@ namespace TreeUnlimiter
                     {
                         if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("LastSaveList==null Obtaining fresh PackedList"); }
                         Loader.LastSaveList = Packer.GetPackedList();
-                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("fresh PackedList assigned to Loader.LastSaveList "); }
+                        if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("fresh PackedList assigned to Loader.LastSaveList "); }
                     }
                     else
                     {
@@ -1433,7 +1470,7 @@ namespace TreeUnlimiter
                 FastList<TreeManager.BurningTree> tmbt2;
                 try
                 {
-                    Logger.dbgLog("fired; Loader.LastSaveUsedPacking = " + Loader.LastSaveUsedPacking.ToString());
+                    if(Mod.DEBUG_LOG_ON){Logger.dbgLog("fired; Loader.LastSaveUsedPacking = " + Loader.LastSaveUsedPacking.ToString());}
 
                     //triggering on lastfileclearFlag forces reordering and then should result in 0 trees and removal.
                     //we have to avoid hitting the non-packer in that case because the direct copy from TM.
@@ -1444,11 +1481,11 @@ namespace TreeUnlimiter
                         //reorder based on LastSaveList of indexes. 
                         //we technically have already done this before so we're duplicating
                         //work unless you want to save those results in Loader.Something?? like LastSavedList? 
-                        Logger.dbgLog("LastSavedPacking True - Getting a reOrderedList using existing objLastSaveList");
+                        if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("LastSavedPacking True - Getting a reOrderedList using existing objLastSaveList"); }
                         Packer.ReOrderBurningTrees(ref Loader.LastSaveList, out tmbt);
 
                         //Now get list from that list copy that only includes 262k+
-                        Logger.dbgLog("LastSavedPacking True - Copying 262k to limit - from our re-ordered copy");
+                        if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("LastSavedPacking True - Copying 262k to limit - from our re-ordered copy"); }
                         tmbt2 = Packer.CopyBurningTreesList(ref tmbt, 2);
                         SerializeExtraBurningTrees(true, tmbt2); //farm out the save details.
 
@@ -1459,7 +1496,7 @@ namespace TreeUnlimiter
                         //This basically shouldn't ever happen anymore unless something goes wildly wrong.
                         //Now get list from **ORG TM copy** that only includes 262k+
                         //In theory there shouldn't be any most cases I can think of.
-                        Logger.dbgLog("LastSavedPacking false and LastFileCleard not set - Copying 262k to limit -from original tree manager");
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("LastSavedPacking false and LastFileCleard not set - Copying 262k to limit -from original tree manager"); }
                         tmbt2 = Packer.CopyBurningTreesList(ref Singleton<TreeManager>.instance.m_burningTrees, 2);
                         SerializeExtraBurningTrees(false, tmbt2);  //farm out the save details.
                     }
@@ -1596,6 +1633,23 @@ namespace TreeUnlimiter
                 short num1;
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Starting detoured deseralizer. Making sure we're initialized."); }
                 if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated!"); }
+#if DEBUG
+                UTDebugUtils.PerfTracker.Reset();
+                UTDebugUtils.PerfTracker.Start();
+#endif
+                //additions 12/22/2016 KRN
+                //we need to manually force, because post 1.6 from 
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Flushing Arrays init"); }
+                    //!LimitTreeManager.Helper.UseModifiedTreeCap)
+                //{
+                    Loader.ResetTreeMananger((uint)LimitTreeManager.Helper.TreeLimit, (uint)LimitTreeManager.Helper.TreeUpdateLimit,true); 
+               // }
+#if DEBUG
+                UTDebugUtils.PerfTracker.Stop();
+                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("That took ms:" + UTDebugUtils.PerfTracker.ElapsedMilliseconds.ToString()); }
+#endif
+                //end additions
+
                 LimitTreeManager.Helper.EnsureInit(1);
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginDeserialize(s, "TreeManager");
                 TreeManager treeManager = Singleton<TreeManager>.instance;
@@ -1608,8 +1662,10 @@ namespace TreeUnlimiter
                 treeManager.m_burningTrees.Clear();  //v1.6.0 c/o
                 //my personal addition because no sense in constant growth.
                 if ((treeManager.m_burningTrees.m_buffer == null) == false && treeManager.m_burningTrees.m_buffer.Length > 128) 
-                { treeManager.m_burningTrees.Trim(); }
-                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("m_burningTrees.Clear()'d and m_burningTrees.Trim()'d"); }
+                { 
+                    treeManager.m_burningTrees.Trim();
+                    if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("m_burningTrees.Clear()'d and m_burningTrees.Trim()'d"); }
+                }
 
                 SimulationManager.UpdateMode mUpdateMode = Singleton<SimulationManager>.instance.m_metaData.m_updateMode;
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Concat(" mUpdatemode =", mUpdateMode.ToString())); }
@@ -1740,6 +1796,7 @@ namespace TreeUnlimiter
 
 
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndDeserialize(s, "TreeManager");
+                Logger.dbgLog("CO replaced deseralizer completely finished. (loading complete)"); 
             }
 
 
@@ -1831,7 +1888,7 @@ namespace TreeUnlimiter
                             Logger.dbgLog("debug: Loader.LastSaveList is NOT NULL before call to packer.serialize.");
                         }
                     }
-                    Logger.dbgLog("threadname: " + Thread.CurrentThread.Name + "  calling packer " + DateTime.Now.ToString(Mod.DTMilli));
+                    Logger.dbgLog("calling packer " + DateTime.Now.ToString(Mod.DTMilli));
                     Packer.Serialize(ref Loader.LastSaveList, ref s);
                 }
                 catch (Exception ex)
@@ -1911,7 +1968,7 @@ namespace TreeUnlimiter
                     Loader.LastSaveList = null;
                 }
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("CO TreeManager.Data replaced seralizer totally completed."); }
+                Logger.dbgLog("CO TreeManager.Data replaced seralizer totally completed. (saving completed)"); 
 
             }
         }
@@ -1935,6 +1992,18 @@ namespace TreeUnlimiter
                     }
                     return Mod.SCALED_TREE_COUNT;
                     //return 1048576;  //1048576
+                }
+            }
+
+            internal static int TreeUpdateLimit
+            {
+                get
+                {
+                    if (!LimitTreeManager.Helper.UseModifiedTreeCap)
+                    {
+                        return Mod.DEFAULT_TREEUPDATE_COUNT; //4096
+                    }
+                    return Mod.SCALED_TREEUPDATE_COUNT;
                 }
             }
 
@@ -1975,7 +2044,7 @@ namespace TreeUnlimiter
             /// <param name="caller">The fuction that is calling this guy, 1 = deserialize(),2=custom deserialize() 3=UpdateData()</param>
             internal static void EnsureInit(byte caller)
             {
-                uint num;
+                //uint num;
                 object[] objArray = new object[] { (Mod.IsEnabled ? "enabled" : "disabled"), (LimitTreeManager.Helper.UseModifiedTreeCap ? "actived" : "not-actived"), caller.ToString() };
                 if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Format("EnsureInit({2}) This mod is {0}. Tree unlimiter mode is {1}.", objArray));}
 
@@ -1985,11 +2054,6 @@ namespace TreeUnlimiter
                     {
                         Logger.dbgLog(string.Format(string.Concat("EnsureInit({2}) UseModifiedTreeCap = False  TreeLimit = ", LimitTreeManager.Helper.TreeLimit), objArray));
                     }
-                    /* 9-25-2015    if (Mod.DEBUG_LOG_ON)
-                    {
-                        Debug.LogFormat(string.Concat("[TreeUnlimiter::EnsureInit({2})] LastLoadmode = ", Mod.LastMode.ToString()), objArray);
-                    }
-                    */
                     return;
                 }
 
@@ -2001,10 +2065,12 @@ namespace TreeUnlimiter
                     Logger.dbgLog(string.Format(string.Concat("EnsureInit({2}) Updating TreeManager's ArraySize from ",
                         str1, " to ", treeLimit.ToString()), objArray));
                
-        //9-25-2015 if (Mod.DEBUG_LOG_ON) {Debug.LogFormat(string.Concat("[TreeUnlimiter::EnsureInit({2})] LastLoadmode=", Mod.LastMode.ToString()), objArray); }
-                    Singleton<TreeManager>.instance.m_trees = new Array32<TreeInstance>((uint)LimitTreeManager.Helper.TreeLimit); 
-                    Singleton<TreeManager>.instance.m_updatedTrees = new ulong[Mod.SCALED_TREEUPDATE_COUNT]; //16384
-                    Singleton<TreeManager>.instance.m_trees.CreateItem(out num);
+                    //we almost never should actually get here anymore 12/22/2016 
+                    Loader.ResetTreeMananger((uint)LimitTreeManager.Helper.TreeLimit, (uint)LimitTreeManager.Helper.TreeUpdateLimit); 
+                    //replaced with above in 1.6.2.f1-build10
+                    //Singleton<TreeManager>.instance.m_trees = new Array32<TreeInstance>((uint)LimitTreeManager.Helper.TreeLimit); 
+                    //Singleton<TreeManager>.instance.m_updatedTrees = new ulong[Mod.SCALED_TREEUPDATE_COUNT]; //16384
+                    //Singleton<TreeManager>.instance.m_trees.CreateItem(out num);
                 }
             }
         }

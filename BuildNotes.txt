@@ -10,5 +10,5 @@ ColossalManaged.dll
 ICities.dll
 UnityEngine.dll
 
-They have been removed from the repository to avoid any copyright\distribtution issues.
+They have been removed from the repository to preempt any copyright\distribtution issues.
 

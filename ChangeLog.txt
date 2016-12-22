@@ -4,17 +4,67 @@ Installation Reminder: in your \steamapps folder locate the folder
 steam workshop update.
 
 
-Todo:
+KH Todo:
 
-    
- + place or two where I think I can avoid makavo's original detouring or reflection and just
-   use "reverse - redirects". Need to play around with if after 1.6.1 bakes for awhile.
- + Address the new log exceptions on quiting game from in-game.
- 
+
+ + place or two still where I think I can avoid makavo's original detouring or reflection and just
+   use "reverse - redirects". Need to play around with if after 1.6.2 bakes for awhile.
+   the 'known issue fix' in build_010 sounds small but it's kind change that need users to test
+   every type of situation with - that said I'm expecting issues.
+
+ + re-evaluate with clear head if 'ensureinit()' is really ever needed now that we force
+   the array recreation on every deseralize. Shits still there for safety but I don't
+   think it's needed now.
 
 **ChangeLog \ DevNotes**
 -----------------------
 
+12-22-2016 v1.6.2-f1 build_010
+ + BUG FIX - There were cases where we were stopping buildings from catching fire from
+   trees spreading it. This was actually masking a known issue with Radio Towers burning
+   with choppers unable to put them out - THAT IS NOT OUR ISSUE BTW, it's CO's.  But users
+   of UT actually were not getting the problem - lol. 
+   I've corrected it so that buildings catch fire like they should, however I also exempt
+   those with RadioMastAI's till they fix it. Anyway the bug came from a reflection invoked
+   priv func that for some reason was silently failing. *shugs* it was code I wanted to port
+   to reverse-redirect solution for private access anyway so I finally did that.  
+
+ + Known Issue Fix - Exiting to desktop while sh1t's unpaused\happening in the scene that involves
+   trees+262k causing log entries about array bounds or object doesn't exist are now fixed.
+   This related back to 1.6 loading changes and how we had to reverts to keeping redirects around.
+   Solution was to force the recreation of the array on every map load just before deserialize 
+   'no matter what' - previously we could assume shit was already cleaned on map-unload.
+   The COST was anywhere from an extra 5ms to 100ms (depending on timing and
+   how large you have your tree-scaling set to) However we also save a few milliseconds
+   on map-unload since we're not cleaning there anymore, instead we do it Loader.OnRelease()
+   so it only happens when exiting to main menu. In the end it's probably +dozen ms on average.
+   I tested this with some old maps <262 and > 262k and newer saves of various sorts and with same
+   flipping ghostmode on\off.
+   It seems good, and the map editor ghosting issue has not returned (I didn't expect it too).
+
+
+ ~ Moved Options screen functions to seperate class, refactored large parts of the code.
+ + No more co-routine BS for tooltips, minor tweaks in naming\tooltip desc.
+ + The result is a much more dynamic options screen, no more having to wait for the next
+   OnSettings() call to update some things, namely the dev level options panel.  
+ + Hopefully cleared up some confusion with regard to logging options, if you select Dev.
+   It should not set the basic option for you as part of it, and not allow you to change
+   that unless you first unselect dev-level. bla bla bla nobody but like 2 people probably
+   care.
+ + LimitTreeManager.Helper.TreeUpdate property to properly return correct scaled value
+   based on 'activeness' of the mod and use that where needed instead of direct value, was
+   not a bug thankfully due to other factors.
+
+ ~ finally Removed some lingering commented out source 
+ ~ Detouring logging now spits out sourceclass.functionname -> destclass.functionname.
+ ~ Build 09 was debugging\gui changes mentioned.
+ 
+
+12-17-2016 v1.6.1-f2 build_008
+ ~ more minor tweaks in logging (we had some lines not marked debug mode only)
+ ~ and 2 that were marked debug logging enabled only that were meant to always show.
+
+ 
 12-15-2016 v1.6.1-f2 build_007
  ~ Minor tweaks in some log messages, add timestamp with miliseconds in a few spots and
    some minor formating\workind tweaks.

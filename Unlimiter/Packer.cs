@@ -144,7 +144,7 @@ namespace TreeUnlimiter
 
 
         /// <summary>
-        /// Feed it a packed list it will filter throught he burningtree's buffer
+        /// Feed it a packed list it will filter throught the burningtree's buffer
         /// and change old indexes to match what 99.99% of the time should be the
         /// packed index when deserialised. Only needed when 'packing' is used.
         /// Works on TreeManager.m_burningtress but returns a COPY not the original.
@@ -162,10 +162,8 @@ namespace TreeUnlimiter
                 return 0; 
             }
 
-            //copies ALL
-            //kr 12.2... wtf we're modifiying m_burningtrees live?
-            //shouldn't we be making a copy and fucking with that one?
-            //go get a copy from original that includes all valid burning trees 0 to whatever.
+            //kr 12.2.2016 don't modifiy m_burningtrees live.
+            //go get a copy from original that includes all valid burning trees 0 to whatever and fk with that copy.
             tmburning = CopyBurningTreesList(ref Singleton<TreeManager>.instance.m_burningTrees, 0);
             try
             {
@@ -256,7 +254,7 @@ namespace TreeUnlimiter
                 { Logger.dbgLog("idxlist is null. lastsaveusedpacking: " + Loader.LastSaveUsedPacking.ToString()); }
                 else
                 { Logger.dbgLog("idxlist count: " + idxList.Count + " lastsaveusedpacking: " + Loader.LastSaveUsedPacking.ToString()); }
-                Logger.dbgLog("threadname: " + Thread.CurrentThread.Name);
+
                 if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated!"); }
             }
 

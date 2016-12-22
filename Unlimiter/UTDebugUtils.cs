@@ -4,13 +4,17 @@ using System.Linq;
 using System.Text;
 using ColossalFramework;
 using UnityEngine;
+using System.Diagnostics;
+
 
 namespace TreeUnlimiter
 {
     //Static class for debugging functions
 	internal static class UTDebugUtils
 	{
-
+#if DEBUG
+        internal static Stopwatch PerfTracker = new Stopwatch();
+#endif
 /*
         public static List<int> DumpBurningTreesToList(bool IncludeFireDamaged = false)
         {
@@ -86,10 +90,6 @@ namespace TreeUnlimiter
             { Logger.dbgLog("error: ", ex); }
         }
 
-        public static void DumpDamagedTrees()
-        { 
-        }
-
         public static void ResetAllBurningTrees(bool ClearBurningBufferToo)
         {
             try
@@ -132,13 +132,6 @@ namespace TreeUnlimiter
             return (somevalue & flagtocheck) == flagtocheck;
         }
 
-        public static void DumpBurningTreeBuffer(bool CrossRefferenceTBuff)
-        { 
-        }
-
-        public static void ClearBurningTreeBuffer(bool AlsoResetToNull = false)
-        { 
-        }
 
         //Don't really need this anymore.
         //public static void DumpHelicopters()

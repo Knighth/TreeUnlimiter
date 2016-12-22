@@ -145,10 +145,7 @@ namespace TreeUnlimiter
                 return null;
             }
 
-            Logger.dbgLog("SimMgrThreadName:" + SimMgr.m_simulationThread.Name.ToString());
-            Logger.dbgLog("Now Loading " + id);
-
-
+            if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Now Loading " + id); }
 
             while (!Monitor.TryEnter(SimMgr.m_serializableDataStorage, SimulationManager.SYNCHRONIZE_TIMEOUT))
             {
