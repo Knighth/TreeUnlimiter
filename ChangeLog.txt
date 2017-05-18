@@ -19,6 +19,9 @@ KH Todo:
 **ChangeLog \ DevNotes**
 -----------------------
 
+5-18-2017 v 1.7.0-f5 build01
+ + reviewed 1.7 game changes and recompiled for 1.7, nothing much to fix it seems this round.
+
 12-22-2016 v1.6.2-f1 build_010
  + BUG FIX - There were cases where we were stopping buildings from catching fire from
    trees spreading it. This was actually masking a known issue with Radio Towers burning

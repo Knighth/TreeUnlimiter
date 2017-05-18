@@ -1181,7 +1181,7 @@ namespace TreeUnlimiter
                     oMasterContainer = DeseralizeSaveDataContainer();  //farm it out, always returns at least bare object.
                     if (oMasterContainer == null || oMasterContainer.SaveType ==1 || oMasterContainer.m_BurningTreeData == null)
                     {
-                        Logger.dbgLog("Data Container is null or there is no m_BurningTreeData data to load");
+                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Data Container is null or there is no m_BurningTreeData data to load"); }
                         return false;
                     }
                     if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
@@ -1521,8 +1521,11 @@ namespace TreeUnlimiter
                 {
                     if (lstBurningTrees == null )
                     {
-                        Logger.dbgLog("listBurningTrees is null, it at least should be empty!");
-                        Logger.dbgLog("We will abort the saving of burning data. and leave existing data in place.");
+                        if (Mod.DEBUG_LOG_ON)
+                        {
+                            Logger.dbgLog("listBurningTrees is null, it at least should be empty!");
+                            Logger.dbgLog("We will abort the saving of burning data. and leave existing data in place.");
+                        }
                         //1.6.0 we should probably.. put this back when done testing 1.6.0.-f4_build05
                         //SaveDataUtils.EraseBytesFromNamedKey(UTSaveDataContainer.DefaultContainername);
                         return;
