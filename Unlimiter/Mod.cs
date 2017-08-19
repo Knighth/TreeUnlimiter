@@ -16,7 +16,7 @@ namespace TreeUnlimiter
     {
         internal const ulong MOD_WORKSHOPID = 455403039uL; //technically not needed but I store it here in case I need it.
         internal const string MOD_OFFICIAL_NAME = "Unlimited Trees Mod";
-        internal const string VERSION_BUILD_NUMBER = "1.0.7.0-f5 build_01";
+        internal const string VERSION_BUILD_NUMBER = "1.0.8.0-f3 build_01";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
         internal const string CURRENTMAXTREES_FORMATTEXT = "ScaleFactor: {0}   Maximum trees: {1}";
