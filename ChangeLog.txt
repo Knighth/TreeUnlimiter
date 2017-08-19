@@ -18,6 +18,9 @@ KH Todo:
 
 **ChangeLog \ DevNotes**
 -----------------------
+8-19-2017 v 1.8.0-f3 build 01
+ + fix helicopter spawn issue.
+
 
 5-18-2017 v 1.7.0-f5 build01
  + reviewed 1.7 game changes and recompiled for 1.7, nothing much to fix it seems this round.
