@@ -57,31 +57,31 @@
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Unlimiter\Config.cs" />
-    <Compile Include="Unlimiter\LimitBuildingDecoration.cs">
+    <Compile Include="TreeUnlimiter\Config.cs" />
+    <Compile Include="TreeUnlimiter\LimitBuildingDecoration.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Unlimiter\LimitCommonBuildingAI.cs" />
-    <Compile Include="Unlimiter\LimitDisasterHelpers.cs" />
-    <Compile Include="Unlimiter\LimitFireCopterAI.cs" />
-    <Compile Include="Unlimiter\LimitForestFireAI.cs" />
-    <Compile Include="Unlimiter\LimitTreeTool.cs">
+    <Compile Include="TreeUnlimiter\LimitCommonBuildingAI.cs" />
+    <Compile Include="TreeUnlimiter\LimitDisasterHelpers.cs" />
+    <Compile Include="TreeUnlimiter\LimitFireCopterAI.cs" />
+    <Compile Include="TreeUnlimiter\LimitForestFireAI.cs" />
+    <Compile Include="TreeUnlimiter\LimitTreeTool.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Unlimiter\LimitNaturalResourceManager.cs">
+    <Compile Include="TreeUnlimiter\LimitNaturalResourceManager.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Unlimiter\LimitWeatherManager.cs" />
-    <Compile Include="Unlimiter\Loader.cs" />
-    <Compile Include="Unlimiter\Logger.cs" />
-    <Compile Include="Unlimiter\Mod.cs">
+    <Compile Include="TreeUnlimiter\LimitWeatherManager.cs" />
+    <Compile Include="TreeUnlimiter\Loader.cs" />
+    <Compile Include="TreeUnlimiter\Logger.cs" />
+    <Compile Include="TreeUnlimiter\Mod.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Unlimiter\DataExtension.cs">
+    <Compile Include="TreeUnlimiter\DataExtension.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
@@ -89,16 +89,16 @@
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Unlimiter\LimitTreeManager.cs">
+    <Compile Include="TreeUnlimiter\LimitTreeManager.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Unlimiter\Packer.cs" />
-    <Compile Include="Unlimiter\SaveDataUtils.cs" />
-    <Compile Include="Unlimiter\TreePrefabsDebug.cs" />
-    <Compile Include="Unlimiter\UTDebugUtils.cs" />
-    <Compile Include="Unlimiter\UTSaveDataContainer.cs" />
-    <Compile Include="Unlimiter\UTSettingsUI.cs" />
+    <Compile Include="TreeUnlimiter\Packer.cs" />
+    <Compile Include="TreeUnlimiter\SaveDataUtils.cs" />
+    <Compile Include="TreeUnlimiter\TreePrefabsDebug.cs" />
+    <Compile Include="TreeUnlimiter\UTDebugUtils.cs" />
+    <Compile Include="TreeUnlimiter\UTSaveDataContainer.cs" />
+    <Compile Include="TreeUnlimiter\UTSettingsUI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
