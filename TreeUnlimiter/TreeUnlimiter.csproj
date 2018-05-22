@@ -78,23 +78,23 @@
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Config.cs" />
-    <Compile Include="LimitBuildingDecoration.cs">
+    <Compile Include="Detours\LimitBuildingDecoration.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="LimitCommonBuildingAI.cs" />
-    <Compile Include="LimitDisasterHelpers.cs" />
-    <Compile Include="LimitFireCopterAI.cs" />
-    <Compile Include="LimitForestFireAI.cs" />
-    <Compile Include="LimitTreeTool.cs">
+    <Compile Include="Detours\LimitCommonBuildingAI.cs" />
+    <Compile Include="Detours\LimitDisasterHelpers.cs" />
+    <Compile Include="Detours\LimitFireCopterAI.cs" />
+    <Compile Include="Detours\LimitForestFireAI.cs" />
+    <Compile Include="Detours\LimitTreeTool.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="LimitNaturalResourceManager.cs">
+    <Compile Include="Detours\LimitNaturalResourceManager.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="LimitWeatherManager.cs" />
+    <Compile Include="Detours\LimitWeatherManager.cs" />
     <Compile Include="Loader.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Mod.cs">
@@ -105,22 +105,29 @@
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="CitiesSkylinesDetour\RedirectionHelper.cs">
-      <AutoGen>false</AutoGen>
-      <DesignTimeSharedInput>false</DesignTimeSharedInput>
-    </Compile>
-    <Compile Include="LimitTreeManager.cs">
+    <Compile Include="Detours\LimitTreeManager.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Packer.cs" />
+    <Compile Include="RedirectionFramework\AssemblyRedirector.cs" />
+    <Compile Include="RedirectionFramework\Attributes\IgnoreConditionAttribute.cs" />
+    <Compile Include="RedirectionFramework\Attributes\IgnoreConditions\DisableAttribute.cs" />
+    <Compile Include="RedirectionFramework\Attributes\RedirectAttribute.cs" />
+    <Compile Include="RedirectionFramework\Attributes\RedirectMethodAttribute.cs" />
+    <Compile Include="RedirectionFramework\Attributes\RedirectReverseAttribute.cs" />
+    <Compile Include="RedirectionFramework\Attributes\TargetTypeAttribute.cs" />
+    <Compile Include="RedirectionFramework\Extensions\TypeExtension.cs" />
+    <Compile Include="RedirectionFramework\RedirectionHelper.cs" />
+    <Compile Include="RedirectionFramework\RedirectionUtil.cs" />
+    <Compile Include="RedirectionFramework\Redirector.cs" />
+    <Compile Include="RedirectionFramework\Tuple.cs" />
     <Compile Include="SaveDataUtils.cs" />
     <Compile Include="TreePrefabsDebug.cs" />
     <Compile Include="UTDebugUtils.cs" />
     <Compile Include="UTSaveDataContainer.cs" />
     <Compile Include="UTSettingsUI.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>mkdir "$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(ProjectName)"

@@ -1,15 +1,13 @@
 ﻿using ColossalFramework;
-using ColossalFramework.IO;
-using ColossalFramework.Math;
-using System;
-using System.Linq;
-using System.Threading;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    internal static class LimitWeatherManager
+    [TargetType(typeof(WeatherManager))]
+    public class LimitWeatherManager
     {
+        [RedirectMethod]
         private static ushort CalculateSelfHeight(WeatherManager wm,int x, int z)
         {
             int num; //Terrain min

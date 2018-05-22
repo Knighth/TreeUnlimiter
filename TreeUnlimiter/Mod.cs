@@ -1,4 +1,3 @@
-using CitiesSkylinesDetour;
 using ColossalFramework;
 using ColossalFramework.Plugins;
 using ColossalFramework.UI;
@@ -8,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using TreeUnlimiter.Detours;
+using TreeUnlimiter.RedirectionFramework;
 using UnityEngine;
 
 namespace TreeUnlimiter
@@ -41,7 +42,7 @@ namespace TreeUnlimiter
         public static byte DEBUG_LOG_LEVEL = 0;
         public static bool USE_NO_WINDEFFECTS = false;
         private static bool isFirstInit = true;
-        private static Dictionary<MethodInfo, RedirectCallsState> redirectDic = new Dictionary<MethodInfo, RedirectCallsState>();  //holds our redirects.
+
         public static Configuration config;  //holds static copy of our saved (xml) config data.
         internal static UTSettingsUI oSettings;  //holds an instance of our options UI stuff.
 
@@ -155,8 +156,16 @@ namespace TreeUnlimiter
                 {
                     un_init();
 
-                    //1.6.0 - added next line to remove detours
-                    ReveseSetup();
+                    Redirector<LimitBuildingDecoration>.Revert();
+                    Redirector<LimitNaturalResourceManager>.Revert();
+                    Redirector<LimitTreeTool>.Revert();
+                    Redirector<LimitTreeManager>.Revert();
+                    Redirector<LimitTreeManager.Data>.Revert();
+                    Redirector<LimitCommonBuildingAI>.Revert();
+                    Redirector<LimitDisasterHelpers>.Revert();
+                    Redirector<LimitFireCopterAI>.Revert();
+                    Redirector<LimitForestFireAI>.Revert();
+                    Redirector<LimitWeatherManager>.Revert();
 
                     Logger.dbgLog(string.Concat("v", VERSION_BUILD_NUMBER, " Mod has been unloaded, disabled or game exiting."));
                 }
@@ -272,140 +281,6 @@ namespace TreeUnlimiter
             { Logger.dbgLog("Exception OnSettingsUI :", ex44, true); }
         }
 
-        //12-22-2016 Dead code below as of 1.6.2_build10, as is my nature, leaving around for a release or two.
-
-        /// <summary>
-        /// Coroutine to populate tooltips information. Used to fire only ONCE about 1/2 a second after options dialog is made visable.
-        /// Dev note:
-        /// Unity coroutines are not really async, they don't fire off on some other thread, they are just a construct
-        /// for either doing limited work per-frame (and return to where you left off upon the next frame), 
-        /// or as in this cases a helpfull way of of saying...hey wait till xyz no matter how
-        /// many frames have passed then start doing this on whatever frame is active at that point in time.
-        /// saves you from having to implement your own time tracking\frame counting system.
-        /// I'm using this delay because some UI items take a few ms to initialize before acting or reporting
-        /// there values correctly.
-        /// </summary>
-        /// <param name="hlpComponent">The UIComponent that was triggered.</param>
-        /// <returns></returns>
-        //public static System.Collections.IEnumerator PopulateTooltips(UIComponent hlpComponent)
-        //{
-        //    yield return new WaitForSeconds(0.500f);
-        //    try
-        //    {
-        //        List<UIDropDown> dd = new List<UIDropDown>();
-        //        hlpComponent.GetComponentsInChildren<UIDropDown>(true, dd);
-        //        if (dd.Count > 0)
-        //        {
-        //            dd[0].tooltip = "Sets what you want the mod to do when missing trees\n or trees with serious errors are found.\n DoNothing= Let game errors happen normally.\n ReplaceTree= Replaces any missing tree with a default game tree\n RemoveTree = Deletes the tree\n*Any changes made are commited upon you saving the file after loading\n*So you may want to disable autosave if debugging.";
-        //            dd[0].selectedIndex = config.NullTreeOptionsIndex;
-        //        }
-
-        //        UICheckBox[] cbx = hlpComponent.GetComponentsInChildren<UICheckBox>(true);
-        //        if (cbx != null && cbx.Length > 0)
-        //        {
-        //            for (int i = 0; i < (cbx.Length); i++)
-        //            {
-        //                switch (cbx[i].text)
-        //                {
-        //                    case "Enable Verbose Logging":
-        //                        cbx[i].tooltip = "Enables detailed logging for debugging purposes.\nUnless there are problems you probably don't want to enable this.";
-        //                        break;
-        //                    case "Disable tree effects on wind":
-        //                        cbx[i].tooltip = "Disable the normal game behavior of letting tree's effect \\ dilute the wind map. \n Option should be set before loading a map.";
-        //                        break;
-        //                    case "Enable Seperate Log":
-        //                        cbx[i].tooltip = "Enables logging of UnlimitedTrees log data to a seperate file\n so you don't have to look through the game log.\nLocation can be changed, default is Tree_Unlimiter_Log.txt in game installation root folder.";
-        //                        break;
-        //                    case "Enable Dev Level Logging":
-        //                        cbx[i].tooltip = "Enables logging of much more information to your log file\n Recommended only if you are having problems and someone\nhas asked you to enable it\nprobably in combination with custom log option.";
-        //                        break;
-        //                    case "Enable Ghost Mode":
-        //                        cbx[i].tooltip = "(advanced) Enables Mod to stay active but act like it's not, ignoring 'extra' UT tree data during load.\n This mode only exists to allow you to load a map that has 'extra' UT data WITHOUT actually loading that data the game will act as if UT is not loaded.\n For your own safety you can not change this setting in-game.";
-        //                        break;
-        //                    default:
-        //                        break;
-        //                }
-        //            }
-        //        }
-        //        UISlider sld = hlpComponent.GetComponentInChildren<UISlider>();
-        //        if (sld != null)
-        //        {
-        //            sld.tooltip = "Sets the maximum # of trees in increments of 262,144.\nSetting this above 4 (1 million trees) is not recommended and depending on your hardware\n it may cause performance or rendering issues.";
-        //        }
-
-        //        //buttons.
-        //        UIButton[] cbx5 = hlpComponent.GetComponentsInChildren<UIButton>(true);
-        //        if (cbx5 != null && cbx5.Length > 0)
-        //        {
-        //            for (int i = 0; i < (cbx5.Length); i++)
-        //            {
-        //                switch (cbx5[i].text)
-        //                {
-        //                    case "ResetAllBurningTrees":
-        //                        cbx5[i].tooltip = "Resets all trees to not burning and not damaged.\nAlso wipes the burningtrees array to match.";
-        //                        break;
-        //                    case "ClearAllOurSaveDataFromThisFile":
-        //                        cbx5[i].tooltip = "Wipes all UT data from currently loaded map file.\nNote** This does not remove tree from an active map\n It will just force the mod to re-save your data if needed.\n or not write new data if <262k trees";
-        //                        break;
-        //                    default:
-        //                        break;
-        //                }
-        //            }
-        //        }
-
-
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Logger.dbgLog("error populating tooltips", ex, true);
-        //    }
-
-        //    yield break; //equiv to return and don't reenter.
-        //}
-
-
-
-
-        /// <summary>
-        /// This guy is our wrapper to doing the detours. it does the detour and then adds the returned
-        /// RedirectCallState object too our dictionary for later reversal.
-        /// </summary>
-        /// <param name="type1">The original type of the method we're detouring</param>
-        /// <param name="type2">Our replacement type of the method we're detouring</param>
-        /// <param name="p">The original method\function name</param>
-        private static void RedirectCalls(Type type1, Type type2, string p)
-        {
-            var bindflags1 = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-            var bindflags2 = BindingFlags.Static | BindingFlags.NonPublic;
-            var theMethod = type1.GetMethod(p, bindflags1);
-            //var replacementMethod = type2.GetMethod(p,bindflags2);
-            //if (theMethod == null || replacementMethod == null)
-            //{
-            //    Logger.dbgLog("Failed to locate function: " + p + ((theMethod == null) ? "  orignal":"  replacement"));
-            //}
-            //if (Mod.DEBUG_LOG_ON)
-            //{
-                //redirectDic.Add(theMethod, RedirectionHelper.RedirectCalls(theMethod, type2.GetMethod(p, bindflags2), true)); //makes the actual detour and stores the callstate info.
-            //}
-            //else 
-            //{
-                redirectDic.Add(theMethod, RedirectionHelper.RedirectCalls(theMethod, type2.GetMethod(p, bindflags2), false)); //makes the actual detour and stores the callstate info.
-                if (Mod.DEBUG_LOG_ON)
-                {
-                    Logger.dbgLog(string.Format("redirected from {0}.{2} to {1}.{2}", type1.Name, type2.Name, p));
-                }
-            //}
-
-                //if (Mod.DEBUG_LOG_ON)
-                //{
-                    //Logger.dbgLog(p.ToString() + " redirected");
-                //}
-
-            //RedirectionHelper.RedirectCalls(type1.GetMethod(p, bindflags1), type2.GetMethod(p, bindflags2), false);
-        }
-
-
-
         /// <summary>
         /// Sets up our redirects of our replacement methods.
         /// </summary>
@@ -415,36 +290,20 @@ namespace TreeUnlimiter
 
             try
             {
-                RedirectCalls(typeof(BuildingDecoration), typeof(LimitBuildingDecoration), "ClearDecorations");
-                RedirectCalls(typeof(BuildingDecoration), typeof(LimitBuildingDecoration), "SaveProps");
-                RedirectCalls(typeof(NaturalResourceManager), typeof(LimitNaturalResourceManager), "TreesModified");
-                RedirectCalls(typeof(TreeTool), typeof(LimitTreeTool), "ApplyBrush");
-
-               
-                RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "Deserialize");
-                RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "Serialize");
-                RedirectCalls(typeof(TreeManager.Data), typeof(LimitTreeManager.Data), "AfterDeserialize");
-
-                MethodInfo[] methods = typeof(LimitTreeManager).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Static | BindingFlags.NonPublic);
-                for (int i = 0; i < (int)methods.Length; i++)
-                {
-                    MethodInfo methodInfo = methods[i];
-                    RedirectCalls(typeof(TreeManager), typeof(LimitTreeManager), methodInfo.Name);
-                }
-
-                //reverse redirects
-                RedirectCalls(typeof(LimitCommonBuildingAI), typeof(CommonBuildingAI), "TrySpreadFire");
-                RedirectCalls(typeof(LimitTreeManager), typeof(TreeManager), "TrySpreadFire");
-                //end reverse redirects
-
-                RedirectCalls(typeof(CommonBuildingAI), typeof(LimitCommonBuildingAI), "HandleFireSpread");
-                RedirectCalls(typeof(DisasterHelpers), typeof(LimitDisasterHelpers), "DestroyTrees");
-                RedirectCalls(typeof(FireCopterAI), typeof(LimitFireCopterAI), "FindBurningTree");
-                RedirectCalls(typeof(ForestFireAI), typeof(LimitForestFireAI), "FindClosestTree");
-
+                Redirector<LimitBuildingDecoration>.Deploy();
+                Redirector<LimitNaturalResourceManager>.Deploy();
+                Redirector<LimitTreeTool>.Deploy();
+                Redirector<LimitTreeManager>.Deploy();
+                Redirector<LimitCommonBuildingAI>.Deploy();
+                Redirector<LimitDisasterHelpers>.Deploy();
+                Redirector<LimitFireCopterAI>.Deploy();
+                Redirector<LimitForestFireAI>.Deploy();
 
                 //If windoverride enabled, otherwise don't.
-                if (USE_NO_WINDEFFECTS){RedirectCalls(typeof(WeatherManager), typeof(LimitWeatherManager), "CalculateSelfHeight");}
+                if (USE_NO_WINDEFFECTS)
+                {
+                    Redirector<LimitWeatherManager>.Deploy();
+                }
 
                 IsSetupActive = true;
                 if (DEBUG_LOG_ON) { Logger.dbgLog("Redirected calls completed."); }
@@ -454,38 +313,5 @@ namespace TreeUnlimiter
                 Logger.dbgLog("Setup error:",exception1,true);
             }
         }
-
-        /// <summary>
-        /// Reverses our redirects from ours back to C/O's
-        /// </summary>
-        public static void ReveseSetup()
-        {
-            if (IsSetupActive == false) 
-            {
-                if (DEBUG_LOG_ON) { Logger.dbgLog("Redirects are not active no need to reverse."); }
-                return; 
-            }
-            if (redirectDic.Count == 0)
-            {
-                if (DEBUG_LOG_ON) { Logger.dbgLog("No state entries exists to revert. clearing state?"); }
-                //added 1.6.0 don't we need this, was there a reason we didn't before?
-                IsSetupActive = false; 
-                //end 1.6.0 add
-                return;
-            }
-            try
-            {
-                foreach (var keypair in redirectDic)
-                {
-                    RedirectionHelper.RevertRedirect(keypair.Key, keypair.Value);
-                }
-                redirectDic.Clear();
-                IsSetupActive = false;
-                if (DEBUG_LOG_ON) { Logger.dbgLog("Reverted redirected calls."); }
-            }
-            catch (Exception exception1)
-            { Logger.dbgLog("ReverseSetup error:",exception1,true); }
-        }
-
     }
 }

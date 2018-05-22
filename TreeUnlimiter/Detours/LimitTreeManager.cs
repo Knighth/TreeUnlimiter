@@ -1,22 +1,23 @@
-using ColossalFramework;
-using ColossalFramework.IO;
-using ColossalFramework.Math;
-using ColossalFramework.Threading;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
-using ICities;
+using ColossalFramework;
+using ColossalFramework.IO;
+using ColossalFramework.Math;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    internal static class LimitTreeManager
+    [TargetType(typeof(TreeManager))]
+    public class LimitTreeManager
     {
+        [RedirectMethod]
         private static void AfterTerrainUpdate(TreeManager tm, TerrainArea heightArea, TerrainArea surfaceArea, TerrainArea zoneArea)
         {
             unsafe
@@ -67,6 +68,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static void CalculateAreaHeight(TreeManager tm, float minX, float minZ, float maxX, float maxZ, out int num, out float min, out float avg, out float max)
         {
             unsafe
@@ -127,6 +129,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static bool CalculateGroupData(TreeManager tm, int groupX, int groupZ, int layer, ref int vertexCount, ref int triangleCount, ref int objectCount, ref RenderGroup.VertexArrays vertexArrays)
         {
             unsafe
@@ -168,6 +171,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static bool CheckLimits(TreeManager tm)
         {
             ItemClass.Availability mMode = Singleton<ToolManager>.instance.m_properties.m_mode;
@@ -192,6 +196,7 @@ namespace TreeUnlimiter
             return true;
         }
 
+        [RedirectMethod]
         private static void EndRenderingImpl(TreeManager tm, RenderManager.CameraInfo cameraInfo)
         {
             unsafe
@@ -262,6 +267,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static void FinalizeTree(TreeManager tm, uint tree, ref TreeInstance data)
         {
             unsafe
@@ -323,7 +329,7 @@ namespace TreeUnlimiter
             }
         }
 
-
+        [RedirectMethod]
         private static bool HandleFireSpread(TreeManager tm,ref TreeManager.BurningTree tree)
         {
             unsafe
@@ -503,7 +509,7 @@ namespace TreeUnlimiter
 
         //KH 11/2016: this originally here via marko, I've left it, though I just noticed
         // it doesn't appear to be needed. Something to be looked during next round post 1.6.2
-
+        [RedirectMethod]
         private static void InitializeTree(TreeManager tm, uint tree, ref TreeInstance data, bool assetEditor)
         {
             unsafe
@@ -536,6 +542,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static bool OverlapQuad(TreeManager tm, Quad2 quad, float minY, float maxY,ItemClass.CollisionType collisionType, int layer, uint ignoreTree)
         {
             unsafe
@@ -575,6 +582,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static void PopulateGroupData(TreeManager tm, int groupX, int groupZ, int layer, ref int vertexIndex, ref int triangleIndex, Vector3 groupPosition, RenderGroup.MeshData data, ref Vector3 min, ref Vector3 max, ref float maxRenderDistance, ref float maxInstanceDistance, ref bool requireSurfaceMaps)
         {
             unsafe
@@ -611,6 +619,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static bool RayCast(TreeManager tm, Segment3 ray, ItemClass.Service service, ItemClass.SubService subService, ItemClass.Layer itemLayers, TreeInstance.Flags ignoreFlags, out Vector3 hit, out uint treeIndex)
         {
             unsafe
@@ -725,6 +734,7 @@ namespace TreeUnlimiter
 
 
         //redirected because we need it to call our version of finalizetree?
+        [RedirectMethod]
         private static void ReleaseTreeImplementation(TreeManager tm, uint tree, ref TreeInstance data)
         {
             if (data.m_flags != 0)
@@ -780,6 +790,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static float SampleSmoothHeight(TreeManager tm, Vector3 worldPos)
         {
             unsafe
@@ -835,6 +846,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static void TerrainUpdated(TreeManager tm, TerrainArea heightArea, TerrainArea surfaceArea, TerrainArea zoneArea)
         {
             unsafe
@@ -876,7 +888,7 @@ namespace TreeUnlimiter
         }
 
 
-        //flagged as public for reverse redirect.
+        [RedirectReverse]
         [MethodImpl(MethodImplOptions.NoInlining)] //to prevent inlining
         public static void TrySpreadFire(ushort buildingID, ref Building buildingData, InstanceManager.Group group)
         {
@@ -891,6 +903,7 @@ namespace TreeUnlimiter
             //}
         }
 
+        [RedirectMethod]
         private static void UpdateData(TreeManager tm, SimulationManager.UpdateMode mode)
         {
             Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginLoading("TreeManager.UpdateData");
@@ -926,6 +939,7 @@ namespace TreeUnlimiter
             Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndLoading();
         }
 
+        [RedirectMethod]
         private static void UpdateTree(TreeManager tm, uint tree)
         {
             unsafe
@@ -935,6 +949,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static void UpdateTrees(TreeManager tm, float minX, float minZ, float maxX, float maxZ)
         {
             unsafe
@@ -1623,13 +1638,11 @@ namespace TreeUnlimiter
         }
 
 
-
-        internal class Data
+        [TargetType(typeof(TreeManager.Data))]
+        public class Data
         {
-            public Data()
-            {
-            }
 
+            [RedirectMethod]
             private static void Deserialize(TreeManager.Data data, DataSerializer s)
             {
                 short num;
@@ -1805,6 +1818,7 @@ namespace TreeUnlimiter
 
             //KH 5-12-2016 we had to add this guy to be able to add checking for custom tree issues
             //As earlier in the process we don't have access to 'scene_loaded data'
+            [RedirectMethod]
             private static void AfterDeserialize(TreeManager.Data data ,DataSerializer s)
             {
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginAfterDeserialize(s, "TreeManager");
@@ -1871,7 +1885,7 @@ namespace TreeUnlimiter
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndAfterDeserialize(s, "TreeManager");
             }
             
-
+            [RedirectMethod]
             private static void Serialize(TreeManager.Data data, DataSerializer s)
             {
                 Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginSerialize(s, "TreeManager");

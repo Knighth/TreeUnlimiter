@@ -1,13 +1,14 @@
-﻿using ColossalFramework;
-using ColossalFramework.Math;
-using System;
-using System.Reflection;
+﻿using System;
+using ColossalFramework;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-	internal static class LimitForestFireAI
+    [TargetType(typeof(ForestFireAI))]
+	public class LimitForestFireAI
 	{
+        [RedirectMethod]
         private static uint FindClosestTree(Vector3 pos)
         {
             TreeManager instance = Singleton<TreeManager>.instance;

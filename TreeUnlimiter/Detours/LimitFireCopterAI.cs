@@ -1,13 +1,15 @@
-﻿using ColossalFramework;
+﻿using System;
+using ColossalFramework;
 using ColossalFramework.Math;
-using System;
-using System.Reflection;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-	internal static class LimitFireCopterAI
+    [TargetType(typeof(FireCopterAI))]
+	public class LimitFireCopterAI
 	{
+        [RedirectMethod]
         private static uint FindBurningTree(int seed, Vector3 pos, float maxDistance, Vector3 priorityPos)
         {
             TreeManager instance = Singleton<TreeManager>.instance;

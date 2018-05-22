@@ -2,3 +2,8 @@
 	path = TreeUnlimiter/OptionsFramework
 	url = git@github.com:earalov/OptionsFramework.git
 	branch = customization/TreeUnlimiter
+
+[submodule "TreeUnlimiter/RedirectionFramework"]
+	path = TreeUnlimiter/RedirectionFramework
+	url = git@github.com:earalov/RedirectionFramework.git
+	branch = customization/TreeUnlimiter

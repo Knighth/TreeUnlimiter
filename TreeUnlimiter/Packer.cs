@@ -8,6 +8,7 @@ using ColossalFramework.IO;
 using UnityEngine;
 using System.Diagnostics;
 using System.Threading;
+using TreeUnlimiter.Detours;
 
 namespace TreeUnlimiter
 {

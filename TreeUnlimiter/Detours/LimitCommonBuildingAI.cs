@@ -1,13 +1,15 @@
-﻿using ColossalFramework;
-using ColossalFramework.Math;
-using System;
+﻿using System;
 using System.Reflection;
-using UnityEngine;
 using System.Runtime.CompilerServices;
+using ColossalFramework;
+using ColossalFramework.Math;
+using TreeUnlimiter.RedirectionFramework.Attributes;
+using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    internal static class LimitCommonBuildingAI
+    [TargetType(typeof(CommonBuildingAI))]
+    public class LimitCommonBuildingAI
     {
 /*        public void suck(CommonBuildingAI CBAI)
         {
@@ -19,7 +21,7 @@ namespace TreeUnlimiter
         
         }
  */
-        //redirect reverse this fucker.
+        [RedirectReverse]
         [MethodImpl(MethodImplOptions.NoInlining)] //to prevent inlining
         private static void TrySpreadFire(Quad2 quad, float minY, float maxY, ushort buildingID, ref Building buildingData, InstanceManager.Group group)
         {
@@ -27,6 +29,7 @@ namespace TreeUnlimiter
             if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("try spread fire"); }
         }
 
+        [RedirectMethod]
         private static void HandleFireSpread(CommonBuildingAI CBAI,ushort buildingID, ref Building buildingData, int fireDamage)
         {
             unsafe

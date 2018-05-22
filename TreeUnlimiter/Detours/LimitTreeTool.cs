@@ -1,13 +1,16 @@
-using ColossalFramework;
-using ColossalFramework.Math;
 using System;
 using System.Reflection;
+using ColossalFramework;
+using ColossalFramework.Math;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    internal static class LimitTreeTool
+    [TargetType(typeof(TreeTool))]
+    public class LimitTreeTool
     {
+        [RedirectMethod]
         private static void ApplyBrush(TreeTool tt)
         {
             //uint useless1 = 0;
