@@ -1,0 +1,4 @@
+[submodule "TreeUnlimiter/OptionsFramework"]
+	path = TreeUnlimiter/OptionsFramework
+	url = git@github.com:earalov/OptionsFramework.git
+	branch = customization/TreeUnlimiter

@@ -31,57 +31,77 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>TreeUnlimiter</RootNamespace>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="ICities">
-      <HintPath>.\UnlimiterReferences\ICities.dll</HintPath>
+      <HintPath>ICities.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>.\UnlimiterReferences\Assembly-CSharp.dll</HintPath>
+      <HintPath>Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.XML" />
     <Reference Include="UnityEngine">
-      <HintPath>.\UnlimiterReferences\UnityEngine.dll</HintPath>
+      <HintPath>UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ColossalManaged">
-      <HintPath>.\UnlimiterReferences\ColossalManaged.dll</HintPath>
+      <HintPath>ColossalManaged.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="OptionsFramework\Attibutes\AbstractOptionsAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\ButtonAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\CheckboxAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\DontTranslateDescriptionAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\DropDownAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\DropDownEntry.cs" />
+    <Compile Include="OptionsFramework\Attibutes\DynamicDropDownAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\EnumDropDownAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\HideConditionAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\LabelAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\OptionsAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\SliderAttribute.cs" />
+    <Compile Include="OptionsFramework\Attibutes\TextFieldAttribute.cs" />
+    <Compile Include="OptionsFramework\Extensions\CommonExtensions.cs" />
+    <Compile Include="OptionsFramework\Extensions\UIHelperBaseExtensions.cs" />
+    <Compile Include="OptionsFramework\OptionsWrapper.cs" />
+    <Compile Include="OptionsFramework\Util.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="TreeUnlimiter\Config.cs" />
-    <Compile Include="TreeUnlimiter\LimitBuildingDecoration.cs">
+    <Compile Include="Config.cs" />
+    <Compile Include="LimitBuildingDecoration.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="TreeUnlimiter\LimitCommonBuildingAI.cs" />
-    <Compile Include="TreeUnlimiter\LimitDisasterHelpers.cs" />
-    <Compile Include="TreeUnlimiter\LimitFireCopterAI.cs" />
-    <Compile Include="TreeUnlimiter\LimitForestFireAI.cs" />
-    <Compile Include="TreeUnlimiter\LimitTreeTool.cs">
+    <Compile Include="LimitCommonBuildingAI.cs" />
+    <Compile Include="LimitDisasterHelpers.cs" />
+    <Compile Include="LimitFireCopterAI.cs" />
+    <Compile Include="LimitForestFireAI.cs" />
+    <Compile Include="LimitTreeTool.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="TreeUnlimiter\LimitNaturalResourceManager.cs">
+    <Compile Include="LimitNaturalResourceManager.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="TreeUnlimiter\LimitWeatherManager.cs" />
-    <Compile Include="TreeUnlimiter\Loader.cs" />
-    <Compile Include="TreeUnlimiter\Logger.cs" />
-    <Compile Include="TreeUnlimiter\Mod.cs">
+    <Compile Include="LimitWeatherManager.cs" />
+    <Compile Include="Loader.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="Mod.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="TreeUnlimiter\DataExtension.cs">
+    <Compile Include="DataExtension.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
@@ -89,17 +109,18 @@
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="TreeUnlimiter\LimitTreeManager.cs">
+    <Compile Include="LimitTreeManager.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="TreeUnlimiter\Packer.cs" />
-    <Compile Include="TreeUnlimiter\SaveDataUtils.cs" />
-    <Compile Include="TreeUnlimiter\TreePrefabsDebug.cs" />
-    <Compile Include="TreeUnlimiter\UTDebugUtils.cs" />
-    <Compile Include="TreeUnlimiter\UTSaveDataContainer.cs" />
-    <Compile Include="TreeUnlimiter\UTSettingsUI.cs" />
+    <Compile Include="Packer.cs" />
+    <Compile Include="SaveDataUtils.cs" />
+    <Compile Include="TreePrefabsDebug.cs" />
+    <Compile Include="UTDebugUtils.cs" />
+    <Compile Include="UTSaveDataContainer.cs" />
+    <Compile Include="UTSettingsUI.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>mkdir "$(LOCALAPPDATA)\Colossal Order\Cities_Skylines\Addons\Mods\$(ProjectName)"
