@@ -41,6 +41,7 @@ namespace TreeUnlimiter
         [Slider("Max # of trees scaling factor", 4.0f, 8.0f, 1.0f, UnlimitedTreesOptions, typeof(UTSettingsUI), nameof(UTSettingsUI.UpdateMaxTreesLabel))]
         public float ScaleFactor { get; set; } = 4.0f;
 
+        [XmlIgnore]
         [Label("Maximum trees", UnlimitedTreesOptions)]
         public string MaxTrees { get; set; } = "Maximum trees";
 
