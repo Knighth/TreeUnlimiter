@@ -11,14 +11,13 @@ namespace TreeUnlimiter
 {
 	public class UTSettingsUI
 	{
-	    private static UILabel maxTreeLabel = null; //stores ref to last generated option panel uilabel for maxtrees#.
+	    public static UILabel MaxTreeLabel { get; set; }
 
-        //TODO make use of
-        public static void OnScaleFactorChange(float val)
+        public static void UpdateMaxTreesLabel(float val)
         {
-            if (maxTreeLabel != null)
+            if (MaxTreeLabel != null)
             {
-                maxTreeLabel.text = string.Format(Mod.CURRENTMAXTREES_FORMATTEXT, OptionsWrapper<Configuration>.Options.ScaleFactor, OptionsWrapper<Configuration>.Options.GetScaledTreeCount());
+                MaxTreeLabel.text = $"Maximum trees: {OptionsWrapper<Configuration>.Options.GetScaledTreeCount()}";
             }
         }
 

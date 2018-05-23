@@ -38,10 +38,11 @@ namespace TreeUnlimiter
 
         [HideIfInGame]
         [Description("Sets the maximum # of trees in increments of 262,144.\nSetting this above 4 (1 million trees) is not recommended and depending on your hardware\n it may cause performance or rendering issues.")]
-        [Slider("Max # of trees scaling factor", 4.0f, 8.0f, 1.0f, UnlimitedTreesOptions, typeof(UTSettingsUI), nameof(UTSettingsUI.OnScaleFactorChange))]
+        [Slider("Max # of trees scaling factor", 4.0f, 8.0f, 1.0f, UnlimitedTreesOptions, typeof(UTSettingsUI), nameof(UTSettingsUI.UpdateMaxTreesLabel))]
         public float ScaleFactor { get; set; } = 4.0f;
 
-        //TODO: restore tree count label generation
+        [Label("Maximum trees", UnlimitedTreesOptions)]
+        public string MaxTrees { get; set; } = "Maximum trees";
 
         [HideIfNotInGameAttrubute]
         [XmlIgnore]

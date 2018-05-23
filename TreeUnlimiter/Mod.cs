@@ -22,7 +22,7 @@ namespace TreeUnlimiter
         internal const string VERSION_BUILD_NUMBER = "1.0.8.0-f3 build_01";
         internal const string MOD_DESCRIPTION = "Allows you to place way more trees!";
         internal const string MOD_DBG_Prefix = "TreeUnlimiter";
-        internal const string CURRENTMAXTREES_FORMATTEXT = "ScaleFactor: {0}   Maximum trees: {1}";
+
         internal const string DTMilli = "MM/dd/yyyy hh:mm:ss.fff tt";  //used for time formatting.
         internal const string MOD_OrgDataKEYNAME = "mabako/unlimiter";  //where we store treedata
         public const int MAX_NET_SEGMENTS = 36864; //used in BuildingDecorations
@@ -215,7 +215,8 @@ namespace TreeUnlimiter
         public void OnSettingsUI(UIHelperBase helper)
         {
             var components = helper.AddOptionsGroup<Configuration>();
-            //TODO get tree count label
+            UTSettingsUI.MaxTreeLabel = components.OfType<UILabel>().FirstOrDefault(l => l.text.Contains("Maximum trees"));
+            UTSettingsUI.UpdateMaxTreesLabel(OptionsWrapper<Configuration>.Options.ScaleFactor);
         }
     }
 }
