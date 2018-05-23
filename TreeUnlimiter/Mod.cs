@@ -294,6 +294,7 @@ namespace TreeUnlimiter
                 Redirector<LimitNaturalResourceManager>.Deploy();
                 Redirector<LimitTreeTool>.Deploy();
                 Redirector<LimitTreeManager>.Deploy();
+                Redirector<LimitTreeManager.Data>.Deploy();
                 Redirector<LimitCommonBuildingAI>.Deploy();
                 Redirector<LimitDisasterHelpers>.Deploy();
                 Redirector<LimitFireCopterAI>.Deploy();
