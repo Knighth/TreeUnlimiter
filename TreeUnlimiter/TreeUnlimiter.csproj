@@ -56,6 +56,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\HideIfInGameAttribute.cs" />
+    <Compile Include="Attributes\HideIfNotInGameAttrubute.cs" />
     <Compile Include="OptionsFramework\Attibutes\AbstractOptionsAttribute.cs" />
     <Compile Include="OptionsFramework\Attibutes\ButtonAttribute.cs" />
     <Compile Include="OptionsFramework\Attibutes\CheckboxAttribute.cs" />

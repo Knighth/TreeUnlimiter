@@ -31,16 +31,19 @@ namespace TreeUnlimiter
         [EnumDropDown("In case of tree errors:", typeof(TreePrefabsDebug.NullTreeOptions), UnlimitedTreesOptions)]
         public int NullTreeOptionsIndex { get; set; } = 0;
 
+        [HideIfInGame]
         [Description("(advanced) Enables Mod to stay active but act like it's not, ignoring 'extra' UT tree data during load.\n This mode only exists to allow you to load a map that has 'extra' UT data WITHOUT actually loading that data the game will act as if UT is not loaded.\n For your own safety you can not change this setting in-game.")]
         [Checkbox("Enable Ghost Mode", UnlimitedTreesOptions)]
-        public bool GhostModeEnabled { get; set; } = false; //TODO hide in-game
+        public bool GhostModeEnabled { get; set; } = false;
 
+        [HideIfInGame]
         [Description("Sets the maximum # of trees in increments of 262,144.\nSetting this above 4 (1 million trees) is not recommended and depending on your hardware\n it may cause performance or rendering issues.")]
         [Slider("Max # of trees scaling factor", 4.0f, 8.0f, 1.0f, UnlimitedTreesOptions, typeof(UTSettingsUI), nameof(UTSettingsUI.OnScaleFactorChange))]
-        public float ScaleFactor { get; set; } = 4.0f; //TODO hide in-game
+        public float ScaleFactor { get; set; } = 4.0f;
 
         //TODO: restore tree count label generation
 
+        [HideIfNotInGameAttrubute]
         [XmlIgnore]
         [Description("Does not allows tree fires to catch onto Radio Masts.\n This option helps fix a bug in the game, where choppers can't put out those fires.")]
         [Checkbox("Don't burn Radio Masts", InGameOnlyDebugFunctions)]
@@ -48,21 +51,25 @@ namespace TreeUnlimiter
 
         public bool EmergencyOnly_RemoveAllTrees = false;
 
+        [HideIfNotInGameAttrubute]
         [XmlIgnore]
         [Description("Resets all trees to not burning and not damaged.\nAlso wipes the burningtrees array to match.")]
         [Button("Reset all burning trees", InGameOnlyDebugFunctions, typeof(UTSettingsUI), nameof(UTSettingsUI.ClearAllBurningDamaged))]
         public object ClearAllBurningDamaged { get; } = null;
 
+        [HideIfNotInGameAttrubute]
         [XmlIgnore]
         [Description("Wipes all UT data from currently loaded map file.\nNote** This does not remove tree from an active map\n It will just force the mod to re-save your data if needed.\n or not write new data if <262k trees")]
         [Button("Clear all our save data from this file", InGameOnlyDebugFunctions, typeof(UTSettingsUI), nameof(UTSettingsUI.ClearAllSaveDataFromFile))]
         public object ClearAllSaveDataFromFile { get; } = null;
 
+        [HideIfNotInGameAttrubute]
         [XmlIgnore]
         [Description("dumps to your log file a list and size of all custom data entries (beyond just UT) \n in the m_serializableDataStorage dictionary with-in simulation manager.")]
         [Button("List all custom data to log", InGameOnlyDebugFunctions, typeof(UTSettingsUI), nameof(UTSettingsUI.OnListAllCustomDataInFile))]
         public object OnListAllCustomDataInFile { get; } = null;
 
+        [HideIfNotInGameAttrubute]
         [XmlIgnore]
         [Description("Dumps a list of all burning tree data to the log.\n YOU DONT NEED THIS.")]
         [Button("Dump all burning trees to log", InGameOnlyDebugFunctions, typeof(UTSettingsUI), nameof(UTSettingsUI.OnDumpAllBurningTrees))]

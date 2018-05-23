@@ -20,12 +20,11 @@ namespace TreeUnlimiter
         internal static bool LastSaveUsedPacking = false;
         internal static bool LastFileClearedFlag = false;
         internal static List<int> LastSaveList;
+        public static bool InGame { get; set; } = false;
 
-        public LoadingExtension() {}
-        
         public override void OnCreated(ILoading loading)
         {
-
+            InGame = true;
             if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog("OnCreated fired.  " + DateTime.Now.ToString(Mod.DTMilli)); }
 
             //It's useless to try and detect loadingmode here as the simmanager loading obj is empty on first start
@@ -148,7 +147,7 @@ namespace TreeUnlimiter
                 {
                     if (Singleton<SimulationManager>.instance.m_metaData != null)
                     {
-                        Logger.dbgLog(string.Format("Mapname: {0}  Cityname: {1}", Singleton<SimulationManager>.instance.m_metaData.m_MapName, Singleton<SimulationManager>.instance.m_metaData.m_CityName));
+                        Logger.dbgLog(String.Format("Mapname: {0}  Cityname: {1}", Singleton<SimulationManager>.instance.m_metaData.m_MapName, Singleton<SimulationManager>.instance.m_metaData.m_CityName));
                     }
                     TreeManager TreeMgr = Singleton<TreeManager>.instance;
                     int mtreecountr = TreeMgr.m_treeCount;
@@ -172,6 +171,7 @@ namespace TreeUnlimiter
 
         public override void OnLevelUnloading()
         {
+            InGame = false;
             try
             {
                 if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) {Logger.dbgLog("OnLevelUnloading() " + DateTime.Now.ToString(Mod.DTMilli)); }
@@ -229,7 +229,7 @@ namespace TreeUnlimiter
             uint num;
             object[] ostring = new object[]{ tsize.ToString(), updatesize.ToString(), bforce.ToString(), Singleton<TreeManager>.instance.m_trees.m_buffer.Length.ToString() };
             if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
-            { Logger.dbgLog(string.Format("ResetTreeManager tszie= {0} updatesize= {1} bforce= {2} currentTMlen= {3}", ostring)); }
+            { Logger.dbgLog(String.Format("ResetTreeManager tszie= {0} updatesize= {1} bforce= {2} currentTMlen= {3}", ostring)); }
 
             if ((int)Singleton<TreeManager>.instance.m_trees.m_buffer.Length != tsize || bforce == true)
             {
