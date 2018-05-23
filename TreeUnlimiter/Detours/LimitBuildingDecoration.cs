@@ -5,8 +5,9 @@ using UnityEngine;
 namespace TreeUnlimiter.Detours
 {
     [TargetType(typeof(BuildingDecoration))]
-    public class LimitBuildingDecoration
+    public class LimitBuildingDecoration //TODO make compatible with Advanced Buildings Editor
     {
+
         [RedirectMethod]
         private static void ClearDecorations()
         {

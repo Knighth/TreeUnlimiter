@@ -12,16 +12,7 @@ namespace TreeUnlimiter.Detours
     [TargetType(typeof(CommonBuildingAI))]
     public class LimitCommonBuildingAI
     {
-/*        public void suck(CommonBuildingAI CBAI)
-        {
-            //CommonBuildingAI CBAI;
-            BuildingInfo  bldgInfo;
-            bldgInfo = (BuildingInfo)CBAI.GetType().GetField("m_info", BindingFlags.Instance | BindingFlags.Public).GetValue(CBAI);
-            string tmp = bldgInfo.m_size.y.ToString();
-            var x = CBAI.GetType().GetMethod("TrySpreadFire", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
-        
-        }
- */
+
         [RedirectReverse]
         [MethodImpl(MethodImplOptions.NoInlining)] //to prevent inlining
         private static void TrySpreadFire(Quad2 quad, float minY, float maxY, ushort buildingID, ref Building buildingData, InstanceManager.Group group)

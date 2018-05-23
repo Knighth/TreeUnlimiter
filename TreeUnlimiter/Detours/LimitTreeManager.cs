@@ -773,8 +773,12 @@ namespace TreeUnlimiter.Detours
                         }
                     }
                 }
-
-
+                if (data.GrowState != 0)
+                {
+                    DistrictManager instance = Singleton<DistrictManager>.instance;
+                    byte park = instance.GetPark(data.Position);
+                    --instance.m_parks.m_buffer[(int)park].m_treeCount;
+                }
                 data.m_flags = 0;
                 try
                 {
@@ -1877,6 +1881,12 @@ namespace TreeUnlimiter.Detours
                             if (info != null)
                             {
                                 buffer[i].m_infoIndex = (ushort)info.m_prefabDataIndex;
+                            }
+                            if (buffer[index].GrowState != 0)
+                            {
+                                DistrictManager instance2 = Singleton<DistrictManager>.instance;
+                                byte park = instance2.GetPark(buffer[index].Position);
+                                ++instance2.m_parks.m_buffer[(int) park].m_treeCount;
                             }
                         }
                     }

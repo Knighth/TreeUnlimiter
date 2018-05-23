@@ -291,6 +291,12 @@ namespace TreeUnlimiter
                     {
                         buffer[i].m_infoIndex = (ushort)info.m_prefabDataIndex;
                     }
+                    if (buffer[i].GrowState != 0)
+                    {
+                        DistrictManager instance2 = Singleton<DistrictManager>.instance;
+                        byte park = instance2.GetPark(buffer[i].Position);
+                        ++instance2.m_parks.m_buffer[(int)park].m_treeCount;
+                    }
                 }
             }
         }
