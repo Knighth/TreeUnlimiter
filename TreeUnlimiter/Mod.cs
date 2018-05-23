@@ -8,6 +8,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using TreeUnlimiter.Detours;
+using TreeUnlimiter.OptionsFramework;
+using TreeUnlimiter.OptionsFramework.Extensions;
 using TreeUnlimiter.RedirectionFramework;
 using UnityEngine;
 
@@ -25,42 +27,25 @@ namespace TreeUnlimiter
         internal const string MOD_OrgDataKEYNAME = "mabako/unlimiter";  //where we store treedata
         public const int MAX_NET_SEGMENTS = 36864; //used in BuildingDecorations
         public const int MAX_NET_NODES = 32768;  //used in BuildingDecorations
-        public static readonly string MOD_CONFIGPATH = "TreeUnlimiterConfig.xml";
+
         public static readonly string MOD_DEFAULT_LOG_PATH = "TreeUnlimiter_Log.txt";
-        public static int MOD_TREE_SCALE = 4;
+
         public const int DEFAULT_TREE_COUNT = 262144;
         public const int DEFAULT_TREEUPDATE_COUNT = 4096;
         internal const int FormatVersion1NumOfTrees = 1048576;
         internal const ushort CurrentFormatVersion = 3;  //don't change unless really have to same.
-        public static int SCALED_TREE_COUNT = MOD_TREE_SCALE * DEFAULT_TREE_COUNT; //1048576
-        public static int SCALED_TREEUPDATE_COUNT = MOD_TREE_SCALE * DEFAULT_TREEUPDATE_COUNT;//  16384;
+
         public static bool IsEnabled = false;
         public static bool IsInited = false;
         public static bool IsSetupActive = false;  //tracks if detours active.
-        public static bool IsGhostMode = false;
-        public static bool DEBUG_LOG_ON = false;
-        public static byte DEBUG_LOG_LEVEL = 0;
-        public static bool USE_NO_WINDEFFECTS = false;
+
         private static bool isFirstInit = true;
 
-        public static Configuration config;  //holds static copy of our saved (xml) config data.
         internal static UTSettingsUI oSettings;  //holds an instance of our options UI stuff.
 
-        public string Name
-        {
-            get
-            {
-                return MOD_OFFICIAL_NAME;
-            }
-        }
+        public string Name => MOD_OFFICIAL_NAME;
 
-        public string Description
-        {
-            get
-            {
-                return MOD_DESCRIPTION;
-            }
-        }
+        public string Description => MOD_DESCRIPTION;
 
         /// <summary>
         /// Our constructor. Fired upon Colossal first loading our dll. 
@@ -104,7 +89,6 @@ namespace TreeUnlimiter
                 }
                 if (!isFirstInit)
                 {
-                    ReloadConfiguationData(false, false); //always regrab\refresh our info on-enabled.
                     //EXCEPT when it's our very first time around where isfirstinit will be true.
                     //handles case of user loading with enabled, then disabling, changing config txt manually, then re-enabling.
                     // ..edge case of course but why make them restart to pick up custom config change or pull from disk twice
@@ -128,12 +112,11 @@ namespace TreeUnlimiter
             {
                 if (IsInited == false)
                 {
-                    ReloadConfiguationData(false,false);  //we should only need this if it's the first time around.
                     //PluginsChanged();  //Go find out if we're enabled first time before subscribing.
                     IsInited = true;
                     //Singleton<PluginManager>.instance.eventPluginsChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
                     //Singleton<PluginManager>.instance.eventPluginsStateChanged += new PluginManager.PluginsChangedHandler(PluginsChanged);
-                    if (DEBUG_LOG_ON) Logger.dbgLog("Mod has been initialized.");
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) Logger.dbgLog("Mod has been initialized.");
                 }
             }
             catch (Exception ex)
@@ -184,101 +167,15 @@ namespace TreeUnlimiter
                     //Singleton<PluginManager>.instance.eventPluginsChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
                     //Singleton<PluginManager>.instance.eventPluginsStateChanged -= new PluginManager.PluginsChangedHandler(PluginsChanged);
                     oSettings = null;
-                    IsGhostMode = false;
                     IsInited = false;
                     isFirstInit = true;
-                    if (DEBUG_LOG_ON) Logger.dbgLog("Mod has been un-initialized.");
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) Logger.dbgLog("Mod has been un-initialized.");
                 }
             }
             catch (Exception ex)
             {
                 Logger.dbgLog("Error in un_init", ex, true);
             }
-        }
-
-
-
-
-
-        /// <summary>
-        /// Called to go fetch the information from the config file and populate\refresh our public vars.
-        /// 
-        /// KRN: 10-6-2015: Probably can remove the use of the public vars and just use mod.config.xxx but
-        /// don't want to change yet in this build enough churn already.
-        /// </summary>
-        /// <param name="bForceNewConfig"></param>
-        private static void ReloadConfiguationData(bool bNoReReadConfig = false, bool bForceNewConfig = false)
-        {
-            try
-            {
-                if (bForceNewConfig) //manual create new one and save it.
-                {
-                    config = new Configuration();
-                    Configuration.Serialize(MOD_CONFIGPATH, config);
-                    Logger.dbgLog("New configuation file created. forced"); 
-                }
-
-                if(bNoReReadConfig==false)
-                {
-                    config = Configuration.Deserialize(MOD_CONFIGPATH);
-                }
-                if (config == null)
-                {
-                    //auto create new one and save it; we save it just so that we don't have to hit this again in the case some never touches 'options'.
-                    //if save exceptions we in theory should still function due to setting things before the exception would happen - in theory.
-                    config = new Configuration();
-                    config.DebugLogging = false;
-                    config.DebugLoggingLevel = 0;
-                    config.UseNoWindEffects = false;
-                    config.NullTreeOptionsIndex = 0;
-                    config.EmergencyOnly_RemoveAllTrees = false;
-                    config.UseCustomLogFile = false;
-                    config.ExtraLogDataChecked = false;
-                    config.GhostModeEnabled = false;
-                    Configuration.Serialize(MOD_CONFIGPATH, config);
-                    if (DEBUG_LOG_ON) { Logger.dbgLog("New configuation file created."); }
-                }
-                if (config != null)
-                {
-                    Configuration.ValidateConfig(ref config);
-                    DEBUG_LOG_ON = config.DebugLogging;
-                    DEBUG_LOG_LEVEL = config.DebugLoggingLevel;
-                    IsGhostMode = config.GhostModeEnabled;
-                    USE_NO_WINDEFFECTS = config.UseNoWindEffects;
-                    UpdateScaleFactors();
-                }
-                if (DEBUG_LOG_ON) { Logger.dbgLog("Configuration data loaded or refreshed."); }
-            }
-            catch (Exception ex)
-            {
-                Logger.dbgLog("ReloadConfig Exceptioned:", ex, true);
-            }
-
-        }
-
-
-        internal static void UpdateScaleFactors()
-        {
-            Mod.MOD_TREE_SCALE = Mod.config.ScaleFactor;
-            Mod.SCALED_TREE_COUNT = Mod.MOD_TREE_SCALE * Mod.DEFAULT_TREE_COUNT; //1048576
-            Mod.SCALED_TREEUPDATE_COUNT = Mod.MOD_TREE_SCALE * Mod.DEFAULT_TREEUPDATE_COUNT;//  16384;
-        }
-
-
-                /// <summary>
-        /// Called by game upon user entering options screen.
-        /// icities interface for gui option setup
-        /// </summary>
-        /// <param name="helper"></param>
-        public void OnSettingsUI(UIHelperBase helper)
-        {
-            try
-            {
-                oSettings = new UTSettingsUI();
-                oSettings.BuildSettingsUI(ref helper);
-            }
-            catch (Exception ex44)
-            { Logger.dbgLog("Exception OnSettingsUI :", ex44, true); }
         }
 
         /// <summary>
@@ -301,18 +198,24 @@ namespace TreeUnlimiter
                 Redirector<LimitForestFireAI>.Deploy();
 
                 //If windoverride enabled, otherwise don't.
-                if (USE_NO_WINDEFFECTS)
+                if (OptionsWrapper<Configuration>.Options.UseNoWindEffects)
                 {
                     Redirector<LimitWeatherManager>.Deploy();
                 }
 
                 IsSetupActive = true;
-                if (DEBUG_LOG_ON) { Logger.dbgLog("Redirected calls completed."); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("Redirected calls completed."); }
             }
             catch (Exception exception1)
             {
                 Logger.dbgLog("Setup error:",exception1,true);
             }
+        }
+
+        public void OnSettingsUI(UIHelperBase helper)
+        {
+            var components = helper.AddOptionsGroup<Configuration>();
+            //TODO get tree count label
         }
     }
 }

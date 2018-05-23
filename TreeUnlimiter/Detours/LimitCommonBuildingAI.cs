@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using ColossalFramework;
 using ColossalFramework.Math;
+using TreeUnlimiter.OptionsFramework;
 using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
@@ -26,7 +27,7 @@ namespace TreeUnlimiter.Detours
         private static void TrySpreadFire(Quad2 quad, float minY, float maxY, ushort buildingID, ref Building buildingData, InstanceManager.Group group)
         {
             //this should never get reached.
-            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("try spread fire"); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("try spread fire"); }
         }
 
         [RedirectMethod]

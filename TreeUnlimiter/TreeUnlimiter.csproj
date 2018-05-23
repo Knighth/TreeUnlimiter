@@ -72,12 +72,11 @@
     <Compile Include="OptionsFramework\Extensions\CommonExtensions.cs" />
     <Compile Include="OptionsFramework\Extensions\UIHelperBaseExtensions.cs" />
     <Compile Include="OptionsFramework\OptionsWrapper.cs" />
-    <Compile Include="OptionsFramework\Util.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Config.cs" />
+    <Compile Include="Configuration.cs" />
     <Compile Include="Detours\LimitBuildingDecoration.cs">
       <AutoGen>false</AutoGen>
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
@@ -95,7 +94,7 @@
       <DesignTimeSharedInput>false</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Detours\LimitWeatherManager.cs" />
-    <Compile Include="Loader.cs" />
+    <Compile Include="LoadingExtension.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Mod.cs">
       <AutoGen>false</AutoGen>

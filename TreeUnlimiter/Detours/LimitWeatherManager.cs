@@ -1,4 +1,5 @@
 ﻿using ColossalFramework;
+using TreeUnlimiter.OptionsFramework;
 using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
@@ -24,7 +25,7 @@ namespace TreeUnlimiter.Detours
             Singleton<TerrainManager>.instance.CalculateAreaHeight(single3, single4, single5, single6, out num, out num1, out num2);
 
             //new - ignore tree data.
-            if (Mod.USE_NO_WINDEFFECTS)   //My Additions to overide tree effects.
+            if (OptionsWrapper<Configuration>.Options.UseNoWindEffects)   //My Additions to overide tree effects.
             {    
                 return (ushort)Mathf.Clamp(num1 + num2 >> 1, 0, 65535);
             }

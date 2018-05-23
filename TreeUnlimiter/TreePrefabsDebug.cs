@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using ColossalFramework;
@@ -8,6 +9,7 @@ using UnityEngine;
 using System.Reflection;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using TreeUnlimiter.OptionsFramework;
 
 
 namespace TreeUnlimiter
@@ -19,8 +21,11 @@ namespace TreeUnlimiter
         [Flags]
         public enum NullTreeOptions
         {
+            [Description("DoNothing (Default)")]
             DoNothing = 0,
+            [Description("Replace")]
             ReplaceTree = 1,
+            [Description("Remove")]
             RemoveTree = 2,
         }
 
@@ -35,7 +40,7 @@ namespace TreeUnlimiter
             int c = 0;
             try 
             {
-                if (confirmed == true & Mod.config.EmergencyOnly_RemoveAllTrees == true & Mod.DEBUG_LOG_ON == true & Mod.DEBUG_LOG_LEVEL > 1 & Mod.config.NullTreeOptionsValue == NullTreeOptions.RemoveTree)
+                if (confirmed == true & OptionsWrapper<Configuration>.Options.EmergencyOnly_RemoveAllTrees == true & OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true & OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1 & OptionsWrapper<Configuration>.Options.NullTreeOptionsIndex == (int)NullTreeOptions.RemoveTree)
                 {
                     TreeManager treeManager = Singleton<TreeManager>.instance;
                     TreeInstance[] tBuffer = treeManager.m_trees.m_buffer;
@@ -70,11 +75,11 @@ namespace TreeUnlimiter
         {
             try
             {
-                if (Mod.config.NullTreeOptionsValue == NullTreeOptions.RemoveTree)
+                if (OptionsWrapper<Configuration>.Options.NullTreeOptionsIndex == (int)NullTreeOptions.RemoveTree)
                 {
                     TreeManager treeManager = Singleton<TreeManager>.instance;
                     treeManager.ReleaseTree(idx);
-                    if (Mod.DEBUG_LOG_ON)
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled())
                     { Logger.dbgLog("Removed specific tree at index " + idx.ToString() + " as instructed!"); }
                 }
             }
@@ -101,7 +106,7 @@ namespace TreeUnlimiter
                     ushort old = tbuffer[idx].m_infoIndex;
                     tbuffer[idx].Info = tinew;
                     tbuffer[idx].m_infoIndex = (ushort)tinew.m_prefabDataIndex;
-                    if (Mod.DEBUG_LOG_ON)
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled())
                     { Logger.dbgLog("Replaced specific tree " + idx.ToString() + " as instructed with infoindx " + old.ToString() + " to info(0) " + tinew.name.ToString() + " new m_infoidx " + tbuffer[idx].m_infoIndex.ToString()); }
                 }
             }
@@ -145,7 +150,7 @@ namespace TreeUnlimiter
                         }
                     }
 
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
                     {
                         string tmpstr = "";
                         foreach (KeyValuePair<int, int> kvp in _LoadedIndexes)
@@ -256,11 +261,11 @@ namespace TreeUnlimiter
         /// <param name="idx"></param>
         internal static void RemoveOrReplace(uint idx)
         {
-            if (Mod.config.NullTreeOptionsValue == NullTreeOptions.ReplaceTree)
+            if (OptionsWrapper<Configuration>.Options.NullTreeOptionsIndex == (int)NullTreeOptions.ReplaceTree)
             {
                 ReplaceSpecificTree(idx); 
             }
-            else if (Mod.config.NullTreeOptionsValue == NullTreeOptions.RemoveTree)
+            else if (OptionsWrapper<Configuration>.Options.NullTreeOptionsIndex == (int)NullTreeOptions.RemoveTree)
             { 
                 RemoveSpecificTree(idx); 
             }
@@ -299,9 +304,9 @@ namespace TreeUnlimiter
             bool errflag = false;
             try
             {
-                if (Mod.config.EmergencyOnly_RemoveAllTrees == true)
+                if (OptionsWrapper<Configuration>.Options.EmergencyOnly_RemoveAllTrees == true)
                 {
-                    if (Mod.config.NullTreeOptionsValue == NullTreeOptions.RemoveTree)
+                    if (OptionsWrapper<Configuration>.Options.NullTreeOptionsIndex == (int)NullTreeOptions.RemoveTree)
                     {
                         RemoveAllTrees(true);
                         return false;
@@ -309,7 +314,7 @@ namespace TreeUnlimiter
                 }
                 validateTreeInfosLoaded();
                 List<int> TreeIndexes = Packer.GetPackedList();
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
                 {
                     Logger.dbgLog("TreeIndexes count = " + TreeIndexes.Count.ToString());
                     Logger.dbgLog("total m_treeCount = " + Singleton<TreeManager>.instance.m_treeCount.ToString());
@@ -330,7 +335,7 @@ namespace TreeUnlimiter
                             if (ti == null || ti.m_prefabDataIndex < 0)
                             {
                                 nullcounter++;
-                                if (Mod.DEBUG_LOG_ON)
+                                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled())
                                 {
                                     Logger.dbgLog("tree idx " + TreeIndexes[i].ToString() + " .Info or Info.m_prefabDataIndex was -1");
                                 }
@@ -341,7 +346,7 @@ namespace TreeUnlimiter
                                 if (_LoadedIndexes.ContainsKey(ti.m_prefabDataIndex) == false)
                                 {
                                     errcounter++;
-                                    if (Mod.DEBUG_LOG_ON)
+                                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled())
                                     {
                                         Logger.dbgLog("tree idx " + TreeIndexes[i].ToString() + " contains an Info.m_prefabDataIndex of " + ti.m_prefabDataIndex.ToString() + " which was not in the validated list.");
                                     }
@@ -359,7 +364,7 @@ namespace TreeUnlimiter
                         }
 
                     }
-                    if (Mod.DEBUG_LOG_ON)
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled())
                     {
                         Logger.dbgLog("validation report -  totalchecked:" + total.ToString() + "; errcounter:" + errcounter.ToString() + "; nullcounter:" + nullcounter.ToString());
                     }
