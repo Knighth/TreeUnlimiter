@@ -1,8 +1,0 @@
-
-You need the follow from you \Cities_Data\Managed folder:
-Assembly-Csharp.dll
-ColossalManaged.dll
-ICities.dll
-UnityEngine.dll
-
-They have been removed from the repository to avoid any copyright\distribtution issues.

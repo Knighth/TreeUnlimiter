@@ -10,22 +10,22 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using TreeUnlimiter.OptionsFramework;
 using UnityEngine;
 
 namespace TreeUnlimiter
 {
-    public class Loader : LoadingExtensionBase
+    public class LoadingExtension : LoadingExtensionBase
     {
         internal static bool LastSaveUsedPacking = false;
         internal static bool LastFileClearedFlag = false;
         internal static List<int> LastSaveList;
+        public static bool InGame { get; set; } = false;
 
-        public Loader() {}
-        
         public override void OnCreated(ILoading loading)
         {
-
-            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("OnCreated fired.  " + DateTime.Now.ToString(Mod.DTMilli)); }
+            InGame = true;
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog("OnCreated fired.  " + DateTime.Now.ToString(Mod.DTMilli)); }
 
             //It's useless to try and detect loadingmode here as the simmanager loading obj is empty on first start
             //and there after only contains the previous state at this stage, ie the prior map or assset or game.
@@ -37,10 +37,10 @@ namespace TreeUnlimiter
             {
                 if (Mod.IsEnabled == true & Mod.IsSetupActive == false)
                 {
-                    if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Enabled and redirects not setup yet"); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog("Enabled and redirects not setup yet"); }
                     //if (mUpdateMode != SimulationManager.UpdateMode.LoadAsset || mUpdateMode != SimulationManager.UpdateMode.NewAsset)
                     //{
-                    //    if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter:OnCreated]  AssetModeNotDetcted"); }
+                    //    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Debug.Log("[TreeUnlimiter:OnCreated]  AssetModeNotDetcted"); }
 
                     //1.6.0 - This does not work anymore because onCreated() is firing
                     // way to late in the load process now, so while I'm keeping it here.
@@ -52,12 +52,12 @@ namespace TreeUnlimiter
                 }
                 //9-25-2015 - *no longer needed
                 /*
-                            if (Mod.IsEnabled == true & Mod.IsSetupActive == true && Mod.DEBUG_LOG_ON)
+                            if (Mod.IsEnabled == true & Mod.IsSetupActive == true && OptionsWrapper<Configuration>.Options.IsLoggingEnabled())
                             {
-                                if (Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter:Loader::OnCreated] enabled and redirect setup already"); }
+                                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Debug.Log("[TreeUnlimiter:Loader::OnCreated] enabled and redirect setup already"); }
                                 //if (mUpdateMode == SimulationManager.UpdateMode.LoadAsset || mUpdateMode == SimulationManager.UpdateMode.NewAsset)
                                 //{
-                                //    if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter:OnCreated]  AssetModeDetcted"); }
+                                //    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Debug.Log("[TreeUnlimiter:OnCreated]  AssetModeDetcted"); }
                                 //    Mod.ReveseSetup();
                                 //}
 
@@ -77,13 +77,9 @@ namespace TreeUnlimiter
         public override void OnLevelLoaded(LoadMode mode)
         {
             LastSaveUsedPacking = false;
-            if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Map LoadMode:" + mode.ToString() + "  " + DateTime.Now.ToString(Mod.DTMilli)); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog("Map LoadMode:" + mode.ToString() + "  " + DateTime.Now.ToString(Mod.DTMilli)); }
             try
             {
-                //hide ability to change maxtrees.
-                if (UTSettingsUI.maxTreeSlider != null) { UTSettingsUI.maxTreeSlider.Disable(); }
-                if (UTSettingsUI.GhostModechkbox != null) { UTSettingsUI.GhostModechkbox.Disable(); }
-
                 if (Mod.IsEnabled == true & Mod.IsSetupActive == false)
                 {
                     //should rarely, if ever, reach here as should be taken care of in onCreated().
@@ -95,7 +91,7 @@ namespace TreeUnlimiter
 
                     if (mode != LoadMode.LoadAsset & mode != LoadMode.NewAsset)  //fire only on non Assett modes, we don't want it to get setup on assett mode anyway.
                     {
-                        if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog(" AssetModeNotDetcted"); }
+                        if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog(" AssetModeNotDetcted"); }
                         string strmsg = "[TreeUnlimiter:OnLevelLoaded]  *** Enabled but not setup yet, why did this happen??\n" +
                             "Did OnCreated() not fire?? did redirections exception error?\n If you see this please contact author or make sure other mods did not cause a critical errors prior to this one during the load process." +
                             "\n We are now going to disable this mod from running during this map load attempt.";
@@ -107,12 +103,12 @@ namespace TreeUnlimiter
 
                 if (Mod.IsEnabled == true & Mod.IsSetupActive == true)
                 {
-                    if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Enabled and setup already.(expected)"); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog("Enabled and setup already.(expected)"); }
                     
                     if (mode == LoadMode.LoadAsset || mode == LoadMode.NewAsset)
                     {
                         //if we are asseteditor then revert the redirects, and reset the treemanager data.
-                        if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("AssetModeDetcted, removing redirects and resetting treemanager"); }
+                        if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog("AssetModeDetcted, removing redirects and resetting treemanager"); }
 
                         //1.6.0 commented out these 2 lines
                         //ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT, true);
@@ -120,7 +116,7 @@ namespace TreeUnlimiter
 
                         if (mode == LoadMode.NewAsset & (Singleton<TreeManager>.instance.m_treeCount < 0))
                         {
-                            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("AssetModeDetcted, Treecount is less < then 0 !"); };
+                            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("AssetModeDetcted, Treecount is less < then 0 !"); };
                             //{ Singleton<TreeManager>.instance.m_treeCount = 0; }
                         }
                     }
@@ -134,24 +130,24 @@ namespace TreeUnlimiter
                         //                    uint inum;
                         if (Singleton<TreeManager>.instance.m_trees.ItemCount() == 0 & Singleton<TreeManager>.instance.m_treeCount == -1)
                         {
-                            if (Mod.DEBUG_LOG_ON == true) { Logger.dbgLog(" New or LoadMap Detected & itemcount==0 treecount == -1"); }
+                            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog(" New or LoadMap Detected & itemcount==0 treecount == -1"); }
                             //removed for 1 vs 0 fix in Deserialize routine that was causing hack problem.
                             //                        if (Singleton<TreeManager>.instance.m_trees.CreateItem(out inum))
                             //                        {
-                            //                            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter:OnLevelLoaded]  New or Loadmap Detected - Added padding, createditem# " + inum.ToString()); }
+                            //                            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Debug.Log("[TreeUnlimiter:OnLevelLoaded]  New or Loadmap Detected - Added padding, createditem# " + inum.ToString()); }
                             //                            Singleton<TreeManager>.instance.m_treeCount = (int)(Singleton<TreeManager>.instance.m_trees.ItemCount() - 1u);
-                            //                            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Debug.Log("[TreeUnlimiter:OnLevelLoaded]  New or Loadmap Detected - treecount updated: " + Singleton<TreeManager>.instance.m_treeCount.ToString()); }
+                            //                            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Debug.Log("[TreeUnlimiter:OnLevelLoaded]  New or Loadmap Detected - treecount updated: " + Singleton<TreeManager>.instance.m_treeCount.ToString()); }
                             //                        }
                         }
                     }
 
                 }
 
-                if (Mod.DEBUG_LOG_ON == true)  //Debugging crap for the above stated hack.
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true)  //Debugging crap for the above stated hack.
                 {
                     if (Singleton<SimulationManager>.instance.m_metaData != null)
                     {
-                        Logger.dbgLog(string.Format("Mapname: {0}  Cityname: {1}", Singleton<SimulationManager>.instance.m_metaData.m_MapName, Singleton<SimulationManager>.instance.m_metaData.m_CityName));
+                        Logger.dbgLog(String.Format("Mapname: {0}  Cityname: {1}", Singleton<SimulationManager>.instance.m_metaData.m_MapName, Singleton<SimulationManager>.instance.m_metaData.m_CityName));
                     }
                     TreeManager TreeMgr = Singleton<TreeManager>.instance;
                     int mtreecountr = TreeMgr.m_treeCount;
@@ -175,9 +171,10 @@ namespace TreeUnlimiter
 
         public override void OnLevelUnloading()
         {
+            InGame = false;
             try
             {
-                if (TreeUnlimiter.Mod.DEBUG_LOG_ON) {Logger.dbgLog("OnLevelUnloading() " + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) {Logger.dbgLog("OnLevelUnloading() " + DateTime.Now.ToString(Mod.DTMilli)); }
 
                 if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
                 {
@@ -190,7 +187,7 @@ namespace TreeUnlimiter
                     //ResetTreeMananger(Mod.DEFAULT_TREE_COUNT, Mod.DEFAULT_TREEUPDATE_COUNT);  
 
 
-                    Loader.LastFileClearedFlag = false;
+                    LoadingExtension.LastFileClearedFlag = false;
                     if (LastSaveList != null)
                     { LastSaveList.Clear(); LastSaveList.Capacity = 1; LastSaveList = null; }
                 }
@@ -199,7 +196,7 @@ namespace TreeUnlimiter
             {
                 Logger.dbgLog("Error: ",ex,true);
             }
-            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) {Logger.dbgLog("\r\n"); } //crlf easier on eyes.
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) {Logger.dbgLog("\r\n"); } //crlf easier on eyes.
             base.OnLevelUnloading();
         }
 
@@ -208,7 +205,7 @@ namespace TreeUnlimiter
         {
             try
             {
-                if (TreeUnlimiter.Mod.DEBUG_LOG_ON) { Logger.dbgLog("OnReleased()  " + DateTime.Now.ToString(Mod.DTMilli) + "\r\n"); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("OnReleased()  " + DateTime.Now.ToString(Mod.DTMilli) + "\r\n"); }
 
                 if (Mod.IsEnabled == true | Mod.IsSetupActive == true)
                 {
@@ -231,15 +228,15 @@ namespace TreeUnlimiter
         {
             uint num;
             object[] ostring = new object[]{ tsize.ToString(), updatesize.ToString(), bforce.ToString(), Singleton<TreeManager>.instance.m_trees.m_buffer.Length.ToString() };
-            if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true && TreeUnlimiter.Mod.DEBUG_LOG_LEVEL > 1)
-            { Logger.dbgLog(string.Format("ResetTreeManager tszie= {0} updatesize= {1} bforce= {2} currentTMlen= {3}", ostring)); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
+            { Logger.dbgLog(String.Format("ResetTreeManager tszie= {0} updatesize= {1} bforce= {2} currentTMlen= {3}", ostring)); }
 
             if ((int)Singleton<TreeManager>.instance.m_trees.m_buffer.Length != tsize || bforce == true)
             {
                 Singleton<TreeManager>.instance.m_trees = new Array32<TreeInstance>((uint)tsize);
                 Singleton<TreeManager>.instance.m_updatedTrees = new ulong[updatesize];
                 Singleton<TreeManager>.instance.m_trees.CreateItem(out num);
-                if (TreeUnlimiter.Mod.DEBUG_LOG_ON == true) { Logger.dbgLog("Reset of TreeManager completed; forced=" + bforce.ToString() + "  " + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() == true) { Logger.dbgLog("Reset of TreeManager completed; forced=" + bforce.ToString() + "  " + DateTime.Now.ToString(Mod.DTMilli)); }
             }
         }
     }

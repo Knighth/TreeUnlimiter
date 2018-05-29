@@ -1,5 +1,7 @@
 using ICities;
 using System;
+using TreeUnlimiter.Detours;
+using TreeUnlimiter.OptionsFramework;
 
 namespace TreeUnlimiter
 {
@@ -13,7 +15,7 @@ namespace TreeUnlimiter
         //It does not fire once per each map load unless you exit to mainmenu.
         public override void OnCreated(ISerializableData serializedData) 
         {
-            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Oncreated() fired  " + DateTime.Now.ToString(Mod.DTMilli)); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("Oncreated() fired  " + DateTime.Now.ToString(Mod.DTMilli)); }
             try
             {
                 DataExtension._serializableData = serializedData;
@@ -27,10 +29,10 @@ namespace TreeUnlimiter
         //has been called on all the managers.Effectively it's onLevelLoaded for DataExtentions Class
         public override void OnLoadData()
         {
-            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("OnLoadData() fired"); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("OnLoadData() fired"); }
             try
             {
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
                 {
                     SaveDataUtils.ListDataKeysToLog();
                 }
@@ -45,7 +47,7 @@ namespace TreeUnlimiter
         {
             try
             {
-                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("\r\n  OnSaveData() fired  " + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("\r\n  OnSaveData() fired  " + DateTime.Now.ToString(Mod.DTMilli)); }
                 LimitTreeManager.CustomSerializer.Serialize();
             }
             catch (Exception ex1)
@@ -61,7 +63,7 @@ namespace TreeUnlimiter
                 Logger.dbgLog("custom burning tree data exceptions bubbled up: ", ex, true);
             }
 
-            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("OnSaveData() Completely finished saving custom data." + DateTime.Now.ToString(Mod.DTMilli)); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("OnSaveData() Completely finished saving custom data." + DateTime.Now.ToString(Mod.DTMilli)); }
         }
 
         public override void OnReleased()

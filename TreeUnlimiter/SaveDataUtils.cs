@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using TreeUnlimiter.OptionsFramework;
 using UnityEngine;
 
 namespace TreeUnlimiter
@@ -99,11 +100,11 @@ namespace TreeUnlimiter
                         if (SimMgr.m_serializableDataStorage.Remove(id))
                         {
                             result = true;
-                            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog(string.Format("Successfully removed data from  {0} in m_serializableDataStorage dictionary.", id)); }
+                            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog(string.Format("Successfully removed data from  {0} in m_serializableDataStorage dictionary.", id)); }
                         }
                         else
                         {
-                            if(Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog(string.Format(".Remove() Could not locate {0} in m_serializableDataStorage dictionary.",id));}
+                            if(OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog(string.Format(".Remove() Could not locate {0} in m_serializableDataStorage dictionary.",id));}
                         }
                     }
                     else
@@ -145,7 +146,7 @@ namespace TreeUnlimiter
                 return null;
             }
 
-            if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Now Loading " + id); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Now Loading " + id); }
 
             while (!Monitor.TryEnter(SimMgr.m_serializableDataStorage, SimulationManager.SYNCHRONIZE_TIMEOUT))
             {
@@ -166,7 +167,7 @@ namespace TreeUnlimiter
                         else
                         {
                             result = null;
-                            if(Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog(string.Format("Could not locate {0} in m_serializableDataStorage dictionary.",id));}
+                            if(OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog(string.Format("Could not locate {0} in m_serializableDataStorage dictionary.",id));}
                         }
                     }
                     else
@@ -213,7 +214,7 @@ namespace TreeUnlimiter
                 return false;
             }
 
-            if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Now saving " + id); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Now saving " + id); }
 
             while (!Monitor.TryEnter(SimMgr.m_serializableDataStorage, SimulationManager.SYNCHRONIZE_TIMEOUT))
             {
@@ -227,7 +228,7 @@ namespace TreeUnlimiter
                     SimMgr.m_serializableDataStorage[id] = theBytes;
                     if(SimMgr.m_serializableDataStorage.ContainsKey(id))
                     {
-                        if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Saved " + id + " to storage. (key exists)"); }
+                        if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("Saved " + id + " to storage. (key exists)"); }
                         retval = true;
                     }
                     else

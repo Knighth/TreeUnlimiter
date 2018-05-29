@@ -1,32 +1,27 @@
-﻿using ColossalFramework;
-using ColossalFramework.Math;
-using System;
+﻿using System;
 using System.Reflection;
-using UnityEngine;
 using System.Runtime.CompilerServices;
+using ColossalFramework;
+using ColossalFramework.Math;
+using TreeUnlimiter.OptionsFramework;
+using TreeUnlimiter.RedirectionFramework.Attributes;
+using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    internal static class LimitCommonBuildingAI
+    [TargetType(typeof(CommonBuildingAI))]
+    public class LimitCommonBuildingAI
     {
-/*        public void suck(CommonBuildingAI CBAI)
-        {
-            //CommonBuildingAI CBAI;
-            BuildingInfo  bldgInfo;
-            bldgInfo = (BuildingInfo)CBAI.GetType().GetField("m_info", BindingFlags.Instance | BindingFlags.Public).GetValue(CBAI);
-            string tmp = bldgInfo.m_size.y.ToString();
-            var x = CBAI.GetType().GetMethod("TrySpreadFire", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
-        
-        }
- */
-        //redirect reverse this fucker.
+
+        [RedirectReverse]
         [MethodImpl(MethodImplOptions.NoInlining)] //to prevent inlining
         private static void TrySpreadFire(Quad2 quad, float minY, float maxY, ushort buildingID, ref Building buildingData, InstanceManager.Group group)
         {
             //this should never get reached.
-            if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("try spread fire"); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("try spread fire"); }
         }
 
+        [RedirectMethod]
         private static void HandleFireSpread(CommonBuildingAI CBAI,ushort buildingID, ref Building buildingData, int fireDamage)
         {
             unsafe

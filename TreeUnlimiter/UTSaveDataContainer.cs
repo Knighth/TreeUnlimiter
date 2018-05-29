@@ -22,7 +22,7 @@ namespace TreeUnlimiter
         public string GameVersion = BuildConfig.applicationVersionFull.ToString();
         public string GameSeralizerVersion = BuildConfig.DATA_FORMAT_VERSION.ToString();
         public string ModVersionString = Mod.VERSION_BUILD_NUMBER;
-        public int ScaleSettingDuringSave = Mod.SCALED_TREE_COUNT; 
+
         public int ReservedSaveFlags1 = 0;
         public int ReservedSaveFlags2 = 0;
         public string ReservedString1 = "";

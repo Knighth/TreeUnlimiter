@@ -1,14 +1,15 @@
-﻿using ColossalFramework;
+﻿using System;
+using ColossalFramework;
 using ColossalFramework.Math;
-using System;
-using System.Reflection;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    internal static class LimitDisasterHelpers
+    [TargetType(typeof(DisasterHelpers))]
+    public class LimitDisasterHelpers
     {
-
+        [RedirectMethod]
         private static void DestroyTrees(int seed, InstanceManager.Group group, Vector3 position, float totalRadius, float removeRadius, float destructionRadiusMin, float destructionRadiusMax, float burnRadiusMin, float burnRadiusMax)
         {
             int num = Mathf.Max((int)((position.x - totalRadius) / 32f + 270f), 0);

@@ -1,11 +1,14 @@
 using ColossalFramework;
-using System;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    public static class LimitBuildingDecoration
+    [TargetType(typeof(BuildingDecoration))]
+    public class LimitBuildingDecoration //TODO make compatible with Advanced Buildings Editor
     {
+
+        [RedirectMethod]
         private static void ClearDecorations()
         {
             NetManager netManager = Singleton<NetManager>.instance;
@@ -41,6 +44,7 @@ namespace TreeUnlimiter
             }
         }
 
+        [RedirectMethod]
         private static void SaveProps(BuildingInfo info, ushort buildingID, ref Building data)
         {
             FastList<BuildingInfo.Prop> fastList = new FastList<BuildingInfo.Prop>();

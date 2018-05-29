@@ -6,14 +6,25 @@ using ColossalFramework;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.IO;
+using TreeUnlimiter.OptionsFramework;
 
 namespace TreeUnlimiter
 {
     public class Logger
     {
+        public enum LoggingLevel
+        {
+            [Description("None")]
+            None = 0,
+            [Description("Basic")]
+            Basic = 1,
+            [Description("Developer")]
+            Developer = 2
+        }
 
         //should be enough for most log messages and we want this guy in the HFHeap.
         private static StringBuilder logSB = new System.Text.StringBuilder(512); 
@@ -47,9 +58,9 @@ namespace TreeUnlimiter
                 {
                     logSB.Append(string.Concat("\r\nStackTrace: ", ex.StackTrace.ToString()));
                 }
-                if (Mod.config != null && Mod.config.UseCustomLogFile == true)
+                if (OptionsWrapper<Configuration>.Options != null && OptionsWrapper<Configuration>.Options.UseCustomLogFile == true)
                 {
-                    string strPath = System.IO.Directory.Exists(Path.GetDirectoryName(Mod.config.CustomLogFilePath)) ? Mod.config.CustomLogFilePath.ToString() : Path.Combine(DataLocation.executableDirectory.ToString(), Mod.config.CustomLogFilePath);
+                    string strPath = System.IO.Directory.Exists(Path.GetDirectoryName(OptionsWrapper<Configuration>.Options.CustomLogFilePath)) ? OptionsWrapper<Configuration>.Options.CustomLogFilePath.ToString() : Path.Combine(DataLocation.executableDirectory.ToString(), OptionsWrapper<Configuration>.Options.CustomLogFilePath);
                     using (StreamWriter streamWriter = new StreamWriter(strPath, true))
                     {
                         streamWriter.WriteLine(logSB.ToString());

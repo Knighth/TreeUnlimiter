@@ -1,15 +1,14 @@
 ﻿using ColossalFramework;
-using ColossalFramework.IO;
-using ColossalFramework.Math;
-using System;
-using System.Linq;
-using System.Threading;
+using TreeUnlimiter.OptionsFramework;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    internal static class LimitWeatherManager
+    [TargetType(typeof(WeatherManager))]
+    public class LimitWeatherManager
     {
+        [RedirectMethod]
         private static ushort CalculateSelfHeight(WeatherManager wm,int x, int z)
         {
             int num; //Terrain min
@@ -26,7 +25,7 @@ namespace TreeUnlimiter
             Singleton<TerrainManager>.instance.CalculateAreaHeight(single3, single4, single5, single6, out num, out num1, out num2);
 
             //new - ignore tree data.
-            if (Mod.USE_NO_WINDEFFECTS)   //My Additions to overide tree effects.
+            if (OptionsWrapper<Configuration>.Options.UseNoWindEffects)   //My Additions to overide tree effects.
             {    
                 return (ushort)Mathf.Clamp(num1 + num2 >> 1, 0, 65535);
             }

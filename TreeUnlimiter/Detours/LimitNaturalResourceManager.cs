@@ -1,11 +1,14 @@
-using ColossalFramework;
 using System;
+using ColossalFramework;
+using TreeUnlimiter.RedirectionFramework.Attributes;
 using UnityEngine;
 
-namespace TreeUnlimiter
+namespace TreeUnlimiter.Detours
 {
-    internal static class LimitNaturalResourceManager
+    [TargetType(typeof(NaturalResourceManager))]
+    public class LimitNaturalResourceManager
     {
+        [RedirectMethod]
         private static void TreesModified(NaturalResourceManager nrm, Vector3 position)
         {
             unsafe

@@ -8,6 +8,8 @@ using ColossalFramework.IO;
 using UnityEngine;
 using System.Diagnostics;
 using System.Threading;
+using TreeUnlimiter.Detours;
+using TreeUnlimiter.OptionsFramework;
 
 namespace TreeUnlimiter
 {
@@ -39,7 +41,7 @@ namespace TreeUnlimiter
                     int tmpcounter = 0;
                     int MinValue = 0;
                     int MaxValue = 0;
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("CopyFlag = " + bCopyFlag.ToString()); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("CopyFlag = " + bCopyFlag.ToString()); }
                     switch (bCopyFlag)
                     {
                         //0-262144 mainserialze()
@@ -55,7 +57,7 @@ namespace TreeUnlimiter
                         //262144 to lastsavecount.count customseralize(packed)???
                         case 3:
                             MinValue = Mod.DEFAULT_TREE_COUNT;
-                            MaxValue = Loader.LastSaveList.Count;
+                            MaxValue = LoadingExtension.LastSaveList.Count;
                             break;
                         //just copy all of them.
                         default:
@@ -63,10 +65,10 @@ namespace TreeUnlimiter
                             MaxValue = LimitTreeManager.Helper.TreeLimit;
                             break;
                     }
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) 
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) 
                     { Logger.dbgLog(string.Concat("copying from: ", MinValue.ToString(), " to ",MaxValue.ToString())); }
 
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) 
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) 
                     { m_PerfMonitor.Reset(); m_PerfMonitor.Start(); }
                     
                     foreach (TreeManager.BurningTree orgTree in orgBurningList)
@@ -82,8 +84,8 @@ namespace TreeUnlimiter
                         }
                     }
                     newlist.Trim();
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { m_PerfMonitor.Stop(); Logger.dbgLog(string.Concat("Copy time took (ticks):", m_PerfMonitor.ElapsedTicks.ToString())); }
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) {Logger.dbgLog(string.Concat("orgCount(m_size):",orgcount.ToString()," copycount:",tmpcounter.ToString()) + " new_msize:" + newlist.m_size.ToString() ); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { m_PerfMonitor.Stop(); Logger.dbgLog(string.Concat("Copy time took (ticks):", m_PerfMonitor.ElapsedTicks.ToString())); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) {Logger.dbgLog(string.Concat("orgCount(m_size):",orgcount.ToString()," copycount:",tmpcounter.ToString()) + " new_msize:" + newlist.m_size.ToString() ); }
                 }
                 else 
                 {
@@ -157,7 +159,7 @@ namespace TreeUnlimiter
             int reordered = 0;
             if (orgindex == null || orgindex.Count < 2) 
             {
-                if (Mod.DEBUG_LOG_ON)
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled())
                 { Logger.dbgLog("orgindex was null or < 2; during call. aborting reorder;");}
                 return 0; 
             }
@@ -170,7 +172,7 @@ namespace TreeUnlimiter
 
                 if (tmburning.m_size > 0 )
                 {
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
                     { Logger.dbgLog(string.Format("reorder will filter though {0} trees, looking for matches to reorder in {1} burning trees",tmburning.m_size.ToString(),orgindex.Count.ToString())); }
                     object[] logstring;
                     for (int i = 1; i < orgindex.Count; i++)
@@ -180,7 +182,7 @@ namespace TreeUnlimiter
                         {
                             if (tmburning.m_buffer[j].m_treeIndex == orgindex[i])
                             {
-                                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 2)
+                                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 2)
                                 {
                                     logstring = new object[] { tmburning.m_buffer[j].m_treeIndex.ToString(), orgindex[i].ToString(), i.ToString(),j.ToString(),(orgindex[i] == i) ? " same":" changed"};
                                     Logger.dbgLog(string.Format("matched burning: {0} == orgidx: {1}  reassigned: {2} status: {4} orgburnidx: {3}", logstring));
@@ -195,13 +197,13 @@ namespace TreeUnlimiter
 
                 else
                 {
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
                     { Logger.dbgLog("No burning trees to reorder or tmburning.m_size was < 1, skipping."); }
                 }
             }
             catch (Exception ex)
             { Logger.dbgLog("", ex, true); }
-            if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Number of reordered trees: " + reordered.ToString()); }
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Number of reordered trees: " + reordered.ToString()); }
             return reordered;
         }
 
@@ -248,14 +250,14 @@ namespace TreeUnlimiter
             //Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.BeginSerialize(s, "TreeManager");
 
 
-            if(Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+            if(OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
             {
                 if (idxList == null)
-                { Logger.dbgLog("idxlist is null. lastsaveusedpacking: " + Loader.LastSaveUsedPacking.ToString()); }
+                { Logger.dbgLog("idxlist is null. lastsaveusedpacking: " + LoadingExtension.LastSaveUsedPacking.ToString()); }
                 else
-                { Logger.dbgLog("idxlist count: " + idxList.Count + " lastsaveusedpacking: " + Loader.LastSaveUsedPacking.ToString()); }
+                { Logger.dbgLog("idxlist count: " + idxList.Count + " lastsaveusedpacking: " + LoadingExtension.LastSaveUsedPacking.ToString()); }
 
-                if (Mod.IsGhostMode) { Logger.dbgLog("Ghost Mode is activated!"); }
+                if (OptionsWrapper<Configuration>.Options.GhostModeEnabled) { Logger.dbgLog("Ghost Mode is activated!"); }
             }
 
             TreeInstance[] mBuffer = Singleton<TreeManager>.instance.m_trees.m_buffer;
@@ -265,11 +267,11 @@ namespace TreeUnlimiter
             //if (idxList != null && idxList.Count >= Mod.DEFAULT_TREE_COUNT) //custom one.
             if (idxList != null && idxList.Count > 1) //always use custom one unless problem.
             {
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using packer seralizer for first 262144 realones."); }
-                if (Mod.DEBUG_LOG_ON && idxList.Count < 262144) 
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Start using packer seralizer for first 262144 realones."); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && idxList.Count < 262144) 
                 { Logger.dbgLog(string.Format("tree seralizer will serialize first {0} trees then dummy up the rest.",idxList.Count)); }
-                Loader.LastSaveUsedPacking = true;
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Loader.LastSaveUsedPacking now set to True."); }
+                LoadingExtension.LastSaveUsedPacking = true;
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Loader.LastSaveUsedPacking now set to True."); }
 
                 EncodedArray.UShort num1 = EncodedArray.UShort.BeginWrite(s);
 
@@ -307,7 +309,7 @@ namespace TreeUnlimiter
                     {
                         if (idxList.Count > limit)
                         {
-                            if ((Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1))
+                            if ((OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1))
                             { Logger.dbgLog("Incrementing related reference counts for prefabs for trees > " + limit.ToString()); }
 
                             DataSerializer.Serialize(System.IO.Stream.Null, DataSerializer.Mode.Memory, 0, new RefCounter(limit, idxList));
@@ -348,7 +350,7 @@ namespace TreeUnlimiter
                 num3.EndWrite();
 
                 //reorder if neccessary
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("reordering burning trees indexes for our seralizer. (packed)"); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("reordering burning trees indexes for our seralizer. (packed)"); }
 
                 if ((uint)tmburning.m_size > 0)
                 {
@@ -369,7 +371,7 @@ namespace TreeUnlimiter
                         orgBurningTrees = new FastList<TreeManager.BurningTree>();
                         Logger.dbgLog("We dummied up a fake 0 count one.");
                     }
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Adjusted burning trees for our seralizer.(packed-reorderedlist)"); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Adjusted burning trees for our seralizer.(packed-reorderedlist)"); }
                     //
                     s.WriteUInt24((uint)orgBurningTrees.m_size);
                     for (int m = 0; m < orgBurningTrees.m_size; m++)
@@ -378,7 +380,7 @@ namespace TreeUnlimiter
                         s.WriteUInt8(orgBurningTrees.m_buffer[m].m_fireIntensity);
                         s.WriteUInt8(orgBurningTrees.m_buffer[m].m_fireDamage);
                     }
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + orgBurningTrees.m_size.ToString() + " packed burning trees"); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Saved " + orgBurningTrees.m_size.ToString() + " packed burning trees"); }
                 }
                 else
                 {
@@ -391,19 +393,19 @@ namespace TreeUnlimiter
                         s.WriteUInt8(tmburning.m_buffer[m].m_fireIntensity);
                         s.WriteUInt8(tmburning.m_buffer[m].m_fireDamage);
                     }
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + " org burning trees (pack but empty)"); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + " org burning trees (pack but empty)"); }
                 }
 
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using packer seralizer.  "  +DateTime.Now.ToString(Mod.DTMilli)); }
-                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Tree saving process completed. (packed) " + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("End using packer seralizer.  "  +DateTime.Now.ToString(Mod.DTMilli)); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("Tree saving process completed. (packed) " + DateTime.Now.ToString(Mod.DTMilli)); }
 
             }
 
             else //use original. we can hit this when we're active but packer either didn't get used or we are in ghost mode.
             {
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("idxList was Null or idxList.Count was < 2"); }
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Start using original seralizer."); }
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Loader.LastSaveUsedPacking state = " + Loader.LastSaveUsedPacking.ToString()); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("idxList was Null or idxList.Count was < 2"); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Start using original seralizer."); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Loader.LastSaveUsedPacking state = " + LoadingExtension.LastSaveUsedPacking.ToString()); }
                 EncodedArray.UShort num1 = EncodedArray.UShort.BeginWrite(s);
                 for (int i = 1; i < num; i++)
                 {
@@ -445,7 +447,7 @@ namespace TreeUnlimiter
                 }
                 num3.EndWrite();
 
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Adjusting burning trees for original seralizer."); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Adjusting burning trees for original seralizer."); }
                 //12-4 KH - you know we could ecapsilate this with above.
                 // save some code, for now leaving it though.
 
@@ -453,7 +455,7 @@ namespace TreeUnlimiter
                 //need just trees < 262144k
 
                 //we feed it the real TreeManager.burningtrees. get back 0-262k
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("No reordering of trees indexes used."); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("No reordering of trees indexes used."); }
                 if (tmburning.m_size > 0)
                 {
                     FastList<TreeManager.BurningTree> orgBurningTrees2; //used below holds tmp copy of burningtrees;
@@ -472,7 +474,7 @@ namespace TreeUnlimiter
                         s.WriteUInt8(orgBurningTrees2.m_buffer[m].m_fireIntensity);
                         s.WriteUInt8(orgBurningTrees2.m_buffer[m].m_fireDamage);
                     }
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + orgBurningTrees2.m_size.ToString() + " org burning trees"); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Saved " + orgBurningTrees2.m_size.ToString() + " org burning trees"); }
 
                 }
                 else 
@@ -485,11 +487,11 @@ namespace TreeUnlimiter
                         s.WriteUInt8(tmburning.m_buffer[m].m_fireIntensity);
                         s.WriteUInt8(tmburning.m_buffer[m].m_fireDamage);
                     }
-                    if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + " org burning trees (org empty)"); }
+                    if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("Saved " + tmburning.m_size.ToString() + " org burning trees (org empty)"); }
                 }
                 
-                if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1) { Logger.dbgLog("End using original seralizer.  " + DateTime.Now.ToString(Mod.DTMilli)); }
-                if (Mod.DEBUG_LOG_ON) { Logger.dbgLog("Tree saving process completed. (original) " + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1) { Logger.dbgLog("End using original seralizer.  " + DateTime.Now.ToString(Mod.DTMilli)); }
+                if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled()) { Logger.dbgLog("Tree saving process completed. (original) " + DateTime.Now.ToString(Mod.DTMilli)); }
             }
            // Singleton<LoadingManager>.instance.m_loadingProfilerSimulation.EndSerialize(s, "TreeManager");
         }
@@ -510,7 +512,7 @@ namespace TreeUnlimiter
         // The given DataSerializer is the dummy one that writes to Stream.Null.
         public void Serialize(DataSerializer s)
         {
-            if (Mod.DEBUG_LOG_ON && Mod.DEBUG_LOG_LEVEL > 1)
+            if (OptionsWrapper<Configuration>.Options.IsLoggingEnabled() && OptionsWrapper<Configuration>.Options.DebugLoggingLevel > 1)
             { 
                 Logger.dbgLog("Fake serialize from " + startIndex.ToString() + " to " + idxList.Count.ToString());
             }
